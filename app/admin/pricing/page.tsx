@@ -1,216 +1,264 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import { Tag, Truck, Plus, Trash2, CheckCircle2, AlertCircle, Percent, DollarSign } from "lucide-react";
-import { DiscountCode, DeliveryCharge } from "@/app/lib/types";
+import { FormEvent, useEffect, useState } from "react";
 
-export default function PricingDiscountsPage() {
-  const [discounts, setDiscounts] = useState<DiscountCode[]>([]);
-  const [delivery, setDelivery] = useState<DeliveryCharge[]>([]);
-  const [loading, setLoading] = useState(true);
+type Discount = {
+  id: number;
+  code: string;
+  type: string;
+  value: number;
+  minAmount: number;
+  usedCount: number;
+  maxUses: number | null;
+  active: boolean;
+};
 
-  // New discount form
-  const [newCode, setNewCode] = useState({
+type Delivery = {
+  id: number;
+  city: string;
+  amount: number;
+  active: boolean;
+};
+
+export default function PricingPage() {
+  const [discounts, setDiscounts] = useState<Discount[]>([]);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [discountForm, setDiscountForm] = useState({
     code: "",
-    type: "percentage" as "percentage" | "fixed",
-    value: 10,
-    minAmount: 3000,
-    maxUses: 100
+    type: "percentage",
+    value: "",
+    minAmount: "0",
+    maxUses: ""
   });
+  const [deliveryForm, setDeliveryForm] = useState({ city: "", amount: "" });
+  const [message, setMessage] = useState("");
 
-  const loadData = async () => {
-    setLoading(true);
+  const load = async () => {
     try {
-      const [discRes, delivRes] = await Promise.all([
+      const [discountResponse, deliveryResponse] = await Promise.all([
         fetch("/api/discount-codes"),
         fetch("/api/delivery-charges")
       ]);
-      if (discRes.ok) setDiscounts(await discRes.json());
-      if (delivRes.ok) setDelivery(await delivRes.json());
+      if (discountResponse.ok) setDiscounts(await discountResponse.json());
+      if (deliveryResponse.ok) setDeliveries(await deliveryResponse.json());
     } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+      console.error("Error loading pricing rules:", err);
     }
   };
 
   useEffect(() => {
-    loadData();
+    load();
   }, []);
 
-  const handleCreateDiscount = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCode.code.trim()) return;
-
+  const submit = async (event: FormEvent, url: string, body: object, reset: () => void) => {
+    event.preventDefault();
     try {
-      const res = await fetch("/api/discount-codes", {
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newCode)
+        body: JSON.stringify(body)
       });
-      if (res.ok) {
-        setNewCode({ code: "", type: "percentage", value: 10, minAmount: 3000, maxUses: 100 });
-        loadData();
+      const data = await response.json();
+      setMessage(response.ok ? "Saved successfully" : data.error ?? "Unable to save");
+      if (response.ok) {
+        reset();
+        await load();
       }
-    } catch {
-      alert("Failed to create discount code");
+    } catch (err) {
+      setMessage("Error saving rule");
+    }
+  };
+
+  const toggle = async (url: string, active: boolean) => {
+    try {
+      await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !active })
+      });
+      await load();
+    } catch (err) {
+      console.error("Toggle error:", err);
+    }
+  };
+
+  const remove = async (url: string) => {
+    try {
+      await fetch(url, { method: "DELETE" });
+      await load();
+    } catch (err) {
+      console.error("Delete error:", err);
     }
   };
 
   return (
-    <div className="space-y-10">
-      {/* Header */}
-      <div>
-        <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#b39b66]">
-          Monetization & Incentives
-        </span>
-        <h1 className="text-3xl font-black uppercase tracking-tight text-neutral-900 font-serif">
-          Pricing, Coupons & Delivery Rates
-        </h1>
-      </div>
+    <main className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-8">
+      <header>
+        <h1 className="text-3xl font-bold font-serif text-neutral-900">Pricing Rules</h1>
+        <p className="mt-1 text-sm text-neutral-500">Control checkout discount promo codes and regional delivery charges.</p>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-        {/* Left Column: Promo Codes List & Creation */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#e5dbc7] shadow-md space-y-6">
-            <div className="flex justify-between items-center pb-4 border-b border-[#eee6d7]">
-              <div>
-                <h2 className="text-lg font-bold font-serif text-neutral-900 flex items-center gap-2">
-                  <Tag size={18} className="text-[#1b4431]" />
-                  <span>Active Promo & Discount Codes</span>
-                </h2>
-                <p className="text-xs text-neutral-500">Incentives verified during customer checkout</p>
-              </div>
-            </div>
+      {message && <p className="rounded-xl bg-neutral-100 border border-neutral-200 px-4 py-3 text-sm font-medium">{message}</p>}
 
-            {loading ? (
-              <div className="py-8 text-center text-xs text-neutral-400">Loading coupons...</div>
-            ) : (
-              <div className="space-y-3">
-                {discounts.map((d) => (
-                  <div
-                    key={d.id}
-                    className="p-4 rounded-2xl bg-[#faf7f2] border border-[#e5dbc7] flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-sm text-[#1b4431] bg-white px-2.5 py-0.5 rounded-md border border-[#e5dbc7]">
-                          {d.code}
-                        </span>
-                        <span className="text-xs font-bold text-emerald-800">
-                          {d.type === "percentage" ? `${d.value}% OFF` : `Rs. ${d.value} OFF`}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-neutral-500 mt-1">
-                        Min spend: Rs. {d.minAmount.toLocaleString()} • Used: {d.usedCount}
-                        {d.maxUses ? ` / ${d.maxUses}` : " (Unlimited)"}
-                      </p>
-                    </div>
-
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
-                      Active
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Create new code */}
-            <form onSubmit={handleCreateDiscount} className="pt-4 border-t border-[#eee6d7] space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-700">
-                Generate New Voucher Code
-              </h3>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div>
-                  <label className="block text-neutral-600 mb-1 font-semibold">Code Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newCode.code}
-                    onChange={(e) => setNewCode({ ...newCode, code: e.target.value.toUpperCase() })}
-                    placeholder="e.g. VIP20"
-                    className="w-full px-3 py-2 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] font-mono uppercase"
-                  />
-                </div>
-                <div>
-                  <label className="block text-neutral-600 mb-1 font-semibold">Type</label>
-                  <select
-                    value={newCode.type}
-                    onChange={(e) => setNewCode({ ...newCode, type: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-xl border border-[#e5dbc7] bg-[#faf7f2]"
-                  >
-                    <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed (Rs.)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-neutral-600 mb-1 font-semibold">Value</label>
-                  <input
-                    type="number"
-                    value={newCode.value}
-                    onChange={(e) => setNewCode({ ...newCode, value: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-[#e5dbc7] bg-[#faf7f2]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-neutral-600 mb-1 font-semibold">Min Spend (Rs.)</label>
-                  <input
-                    type="number"
-                    value={newCode.minAmount}
-                    onChange={(e) => setNewCode({ ...newCode, minAmount: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-[#e5dbc7] bg-[#faf7f2]"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 rounded-xl bg-[#1b4431] hover:bg-[#123023] text-white text-xs font-bold uppercase tracking-widest transition shadow-md"
+      <section className="grid gap-8 lg:grid-cols-2">
+        {/* Discount Codes Section */}
+        <div className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-6 shadow-xs">
+          <h2 className="text-xl font-semibold text-neutral-900">Add Discount Code</h2>
+          <form
+            className="space-y-3"
+            onSubmit={(event) =>
+              submit(event, "/api/discount-codes", discountForm, () =>
+                setDiscountForm({ code: "", type: "percentage", value: "", minAmount: "0", maxUses: "" })
+              )
+            }
+          >
+            <input
+              required
+              placeholder="Code (e.g. SAFA15)"
+              value={discountForm.code}
+              onChange={(e) => setDiscountForm({ ...discountForm, code: e.target.value.toUpperCase() })}
+              className="w-full rounded-xl border border-neutral-200 px-3.5 py-2 text-sm focus:outline-none focus:border-black"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <select
+                value={discountForm.type}
+                onChange={(e) => setDiscountForm({ ...discountForm, type: e.target.value })}
+                className="rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:border-black"
               >
-                Create Promo Code
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Right Column: Delivery Charges & Policy */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#e5dbc7] shadow-md space-y-6">
-            <div className="flex justify-between items-center pb-4 border-b border-[#eee6d7]">
-              <div>
-                <h2 className="text-lg font-bold font-serif text-neutral-900 flex items-center gap-2">
-                  <Truck size={18} className="text-[#1b4431]" />
-                  <span>City Shipping Rates</span>
-                </h2>
-                <p className="text-xs text-neutral-500">Configured air & ground courier costs</p>
-              </div>
+                <option value="percentage">Percentage (%)</option>
+                <option value="fixed">Fixed Amount (Rs.)</option>
+              </select>
+              <input
+                required
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="Discount Value"
+                value={discountForm.value}
+                onChange={(e) => setDiscountForm({ ...discountForm, value: e.target.value })}
+                className="rounded-xl border border-neutral-200 px-3.5 py-2 text-sm focus:outline-none focus:border-black"
+              />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Min order subtotal"
+                value={discountForm.minAmount}
+                onChange={(e) => setDiscountForm({ ...discountForm, minAmount: e.target.value })}
+                className="rounded-xl border border-neutral-200 px-3.5 py-2 text-sm focus:outline-none focus:border-black"
+              />
+              <input
+                type="number"
+                min="1"
+                placeholder="Max uses (optional)"
+                value={discountForm.maxUses}
+                onChange={(e) => setDiscountForm({ ...discountForm, maxUses: e.target.value })}
+                className="rounded-xl border border-neutral-200 px-3.5 py-2 text-sm focus:outline-none focus:border-black"
+              />
+            </div>
+            <button className="rounded-xl bg-black px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-neutral-800 transition">
+              Create Discount Code
+            </button>
+          </form>
 
-            <div className="space-y-2.5">
-              {delivery.map((d) => (
-                <div
-                  key={d.id}
-                  className="p-3 rounded-xl bg-[#faf7f2] border border-[#eee6d7] flex justify-between items-center text-xs"
-                >
-                  <span className="font-bold text-neutral-800">{d.city}</span>
-                  <span className="font-mono font-bold text-[#1b4431]">
-                    {d.amount === 0 ? "FREE" : `Rs. ${d.amount}`}
-                  </span>
+          <div className="divide-y divide-neutral-100 border-t border-neutral-100 pt-2">
+            {discounts.length === 0 ? (
+              <p className="py-4 text-xs text-neutral-400">No discount codes created yet.</p>
+            ) : (
+              discounts.map((discount) => (
+                <div key={discount.id} className="flex items-center justify-between gap-3 py-3 text-sm">
+                  <div>
+                    <b className="text-neutral-900">{discount.code}</b>
+                    <p className="text-neutral-500 text-xs">
+                      {discount.type === "percentage" ? `${discount.value}% off` : `Rs. ${discount.value} off`}, used {discount.usedCount}
+                      {discount.maxUses ? `/${discount.maxUses}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 text-xs">
+                    <button
+                      onClick={() => toggle(`/api/discount-codes/${discount.id}`, discount.active)}
+                      className="rounded-lg border border-neutral-200 px-2.5 py-1 text-neutral-700 hover:border-black"
+                    >
+                      {discount.active ? "Disable" : "Enable"}
+                    </button>
+                    <button
+                      onClick={() => remove(`/api/discount-codes/${discount.id}`)}
+                      className="rounded-lg border border-red-200 px-2.5 py-1 text-red-600 hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1">
-              <p className="font-bold">✦ Free Shipping Threshold Active:</p>
-              <p className="font-light text-emerald-800">
-                Any customer cart reaching Rs. 6,000 or above automatically qualifies for 100% complimentary express air delivery across all Pakistan destinations.
-              </p>
-            </div>
+              ))
+            )}
           </div>
         </div>
-      </div>
-    </div>
+
+        {/* Delivery Charges Section */}
+        <div className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-6 shadow-xs">
+          <h2 className="text-xl font-semibold text-neutral-900">Add Delivery Rule</h2>
+          <form
+            className="space-y-3"
+            onSubmit={(event) =>
+              submit(event, "/api/delivery-charges", deliveryForm, () =>
+                setDeliveryForm({ city: "", amount: "" })
+              )
+            }
+          >
+            <input
+              required
+              placeholder="City or 'Nationwide' fallback"
+              value={deliveryForm.city}
+              onChange={(e) => setDeliveryForm({ ...deliveryForm, city: e.target.value })}
+              className="w-full rounded-xl border border-neutral-200 px-3.5 py-2 text-sm focus:outline-none focus:border-black"
+            />
+            <input
+              required
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Shipping Charge (Rs.)"
+              value={deliveryForm.amount}
+              onChange={(e) => setDeliveryForm({ ...deliveryForm, amount: e.target.value })}
+              className="w-full rounded-xl border border-neutral-200 px-3.5 py-2 text-sm focus:outline-none focus:border-black"
+            />
+            <button className="rounded-xl bg-black px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-neutral-800 transition">
+              Create Delivery Rule
+            </button>
+          </form>
+
+          <div className="divide-y divide-neutral-100 border-t border-neutral-100 pt-2">
+            {deliveries.length === 0 ? (
+              <p className="py-4 text-xs text-neutral-400">No delivery charges set.</p>
+            ) : (
+              deliveries.map((delivery) => (
+                <div key={delivery.id} className="flex items-center justify-between gap-3 py-3 text-sm">
+                  <div>
+                    <b className="capitalize text-neutral-900">{delivery.city}</b>
+                    <p className="text-neutral-500 text-xs">Rs. {delivery.amount}</p>
+                  </div>
+                  <div className="flex gap-2 text-xs">
+                    <button
+                      onClick={() => toggle(`/api/delivery-charges/${delivery.id}`, delivery.active)}
+                      className="rounded-lg border border-neutral-200 px-2.5 py-1 text-neutral-700 hover:border-black"
+                    >
+                      {delivery.active ? "Disable" : "Enable"}
+                    </button>
+                    <button
+                      onClick={() => remove(`/api/delivery-charges/${delivery.id}`)}
+                      className="rounded-lg border border-red-200 px-2.5 py-1 text-red-600 hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
-

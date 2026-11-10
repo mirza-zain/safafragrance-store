@@ -1,405 +1,405 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import {
-  TrendingUp,
-  ShoppingBag,
-  DollarSign,
-  Share2,
-  Plus,
-  MessageCircle,
-  Globe,
-  MapPin,
-  CheckCircle2,
-  X
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { Order } from "@/app/lib/types";
+import { 
+  getOrderChannel, 
+  getChannelMeta, 
+  formatRs, 
+  toMonthKey, 
+  formatMonthName, 
+  SalesChannel 
+} from "@/app/lib/order-utils";
+import ManualSaleModal from "../(component)/ManualSaleModal";
+import { 
+  Plus, 
+  Calendar, 
+  BarChart3, 
+  ShoppingBag, 
+  DollarSign, 
+  CheckCircle2, 
+  Clock, 
+  Search,
+  Receipt
 } from "lucide-react";
-import { InstagramIcon } from "@/app/(client)/(components)/InstagramIcon";
-import { Order, Product } from "@/app/lib/types";
 
-export default function SalesAnalyticsPage() {
+const statusClasses: Record<string, string> = {
+  pending: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
+  processing: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200",
+  shipped: "bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200",
+  delivered: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+  cancelled: "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200"
+};
+
+export default function MonthlySalesPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showManualModal, setShowManualModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Manual sale state
-  const [manualForm, setManualForm] = useState({
-    firstName: "",
-    lastName: "",
-    phoneNum: "",
-    city: "Karachi",
-    address: "Direct Walk-in / Studio Pickup",
-    productId: 1,
-    variantLabel: "50ml Extrait",
-    quantity: 1,
-    channel: "Instagram DM",
-    paymentMethod: "bank_transfer" as "cod" | "bank_transfer",
-    paymentStatus: "paid" as "paid" | "unpaid"
-  });
+  const [selectedMonth, setSelectedMonth] = useState<string>("2026-11");
+  const [channelFilter, setChannelFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [availableMonths, setAvailableMonths] = useState<string[]>(["2026-11"]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const fetchOrders = async () => {
     try {
-      const [ordRes, prodRes] = await Promise.all([
-        fetch("/api/orders"),
-        fetch("/api/product?pageSize=50")
-      ]);
-      if (ordRes.ok) setOrders(await ordRes.json());
-      if (prodRes.ok) {
-        const p = await prodRes.json();
-        setProducts(p.products || []);
-      }
+      setLoading(true);
+      const res = await fetch("/api/orders");
+      if (!res.ok) throw new Error("Failed to load orders");
+      const data: Order[] = await res.json();
+      setOrders(data);
+
+      const monthSet = new Set<string>();
+      monthSet.add("2026-11");
+      data.forEach((o) => {
+        if (o.createdAt) {
+          const key = toMonthKey(o.createdAt);
+          if (key) monthSet.add(key);
+        }
+      });
+      setAvailableMonths(Array.from(monthSet).sort().reverse());
+      setSelectedMonth("2026-11");
     } catch (err) {
-      console.error(err);
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    fetchOrders();
   }, []);
 
-  const totalRevenue = orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
-  const totalVolume = orders.length;
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      if (order.status === "cancelled") return false;
 
-  // Breakdown by perfume
-  const fragranceStats: Record<string, { count: number; revenue: number }> = {};
-  for (const o of orders) {
-    for (const item of o.items) {
-      if (!fragranceStats[item.productName]) {
-        fragranceStats[item.productName] = { count: 0, revenue: 0 };
+      if (selectedMonth !== "all") {
+        const orderMonth = toMonthKey(order.createdAt);
+        if (orderMonth !== selectedMonth) return false;
       }
-      fragranceStats[item.productName].count += item.quantity;
-      fragranceStats[item.productName].revenue += item.price * item.quantity;
-    }
+
+      const channel = getOrderChannel(order);
+      if (channelFilter !== "all" && channel !== channelFilter) return false;
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const fullName = `${order.firstName} ${order.lastName}`.toLowerCase();
+        const matchName = fullName.includes(q);
+        const matchId = String(order.id).includes(q) || (order.trackingId || "").toLowerCase().includes(q);
+        const matchPhone = (order.phoneNum || "").toLowerCase().includes(q);
+        const matchCity = (order.city || "").toLowerCase().includes(q);
+        if (!matchName && !matchId && !matchPhone && !matchCity) return false;
+      }
+
+      return true;
+    });
+  }, [orders, selectedMonth, channelFilter, searchQuery]);
+
+  const monthStats = useMemo(() => {
+    const totalSalesCount = filteredOrders.length;
+    const totalRevenue = filteredOrders.reduce((acc, o) => acc + (Number(o.totalAmount) || 0), 0);
+    const averageOrderValue = totalSalesCount > 0 ? Math.round(totalRevenue / totalSalesCount) : 0;
+    const deliveredCount = filteredOrders.filter(o => o.status === "delivered").length;
+    const pendingCount = filteredOrders.filter(o => o.status === "pending" || o.status === "processing").length;
+
+    const channelCounts: Record<SalesChannel, { count: number; revenue: number }> = {
+      instagram: { count: 0, revenue: 0 },
+      reference: { count: 0, revenue: 0 },
+      website: { count: 0, revenue: 0 },
+      whatsapp: { count: 0, revenue: 0 },
+      direct: { count: 0, revenue: 0 },
+    };
+
+    filteredOrders.forEach((o) => {
+      const ch = getOrderChannel(o);
+      const rev = Number(o.totalAmount) || 0;
+      channelCounts[ch].count += 1;
+      channelCounts[ch].revenue += rev;
+    });
+
+    return {
+      totalSalesCount,
+      totalRevenue,
+      averageOrderValue,
+      deliveredCount,
+      pendingCount,
+      channelCounts
+    };
+  }, [filteredOrders]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-neutral-50 p-6 sm:p-10">
+        <div className="mx-auto max-w-7xl animate-pulse space-y-6">
+          <div className="h-10 w-64 rounded-xl bg-neutral-200" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="h-28 rounded-2xl bg-neutral-200" />
+            <div className="h-28 rounded-2xl bg-neutral-200" />
+            <div className="h-28 rounded-2xl bg-neutral-200" />
+            <div className="h-28 rounded-2xl bg-neutral-200" />
+          </div>
+          <div className="h-80 rounded-2xl bg-neutral-200" />
+        </div>
+      </div>
+    );
   }
 
-  const sortedBestSellers = Object.entries(fragranceStats).sort(
-    (a, b) => b[1].revenue - a[1].revenue
-  );
-
-  const handleRecordManualSale = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const selectedProd = products.find((p) => p.id === Number(manualForm.productId)) || products[0];
-    const variant = selectedProd?.variants?.find((v) => v.label === manualForm.variantLabel);
-    const unitPrice = variant ? variant.price : selectedProd?.price || 4500;
-
-    try {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: manualForm.firstName,
-          lastName: manualForm.lastName || "Customer",
-          email: `${manualForm.phoneNum}@customer.safafragrance.com`,
-          phoneCountryCode: "+92",
-          phoneNum: manualForm.phoneNum,
-          address: manualForm.address,
-          city: manualForm.city,
-          country: "Pakistan",
-          paymentMethod: manualForm.paymentMethod,
-          paymentStatus: manualForm.paymentStatus,
-          items: [
-            {
-              productId: selectedProd.id,
-              productName: selectedProd.name,
-              variantLabel: manualForm.variantLabel,
-              quantity: manualForm.quantity,
-              price: unitPrice
-            }
-          ]
-        })
-      });
-
-      if (!res.ok) throw new Error("Failed to record manual sale");
-
-      setShowManualModal(false);
-      loadData();
-    } catch (err) {
-      alert((err as Error).message);
-    }
-  };
-
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#b39b66]">
-            Commercial Intelligence
-          </span>
-          <h1 className="text-3xl font-black uppercase tracking-tight text-neutral-900 font-serif">
-            Sales & Multi-Channel Performance
-          </h1>
-        </div>
-
-        <button
-          onClick={() => setShowManualModal(true)}
-          className="px-5 py-3 rounded-xl bg-[#1b4431] hover:bg-[#123023] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
-        >
-          <Plus size={16} />
-          <span>Record Quick Sale (IG / WhatsApp)</span>
-        </button>
-      </div>
-
-      {/* KPI row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-white rounded-3xl p-6 border border-[#e5dbc7] shadow-xs space-y-2">
-          <div className="flex justify-between items-center text-xs font-bold uppercase text-neutral-500">
-            <span>Cumulative Revenue</span>
-            <DollarSign size={18} className="text-emerald-700" />
+    <div className="min-h-screen bg-neutral-50 px-4 py-8 text-neutral-900 sm:px-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-8">
+        
+        {/* Top Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-200">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">
+                Performance & Analytics
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                Live Data
+              </span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-serif text-neutral-900 mt-1">
+              Monthly Sales History
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
+              Review monthly sales volume, track Instagram & referral revenue, and inspect every dispatch.
+            </p>
           </div>
-          <p className="text-3xl font-black text-[#1b4431] font-serif">
-            Rs. {totalRevenue.toLocaleString()}
-          </p>
-          <p className="text-xs text-neutral-400">All channels combined</p>
-        </div>
 
-        <div className="bg-white rounded-3xl p-6 border border-[#e5dbc7] shadow-xs space-y-2">
-          <div className="flex justify-between items-center text-xs font-bold uppercase text-neutral-500">
-            <span>Bottles Dispatched</span>
-            <ShoppingBag size={18} className="text-[#1b4431]" />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition active:scale-[0.98]"
+            >
+              <Plus className="size-4" />
+              <span>Record Offline / Insta Sale</span>
+            </button>
           </div>
-          <p className="text-3xl font-black text-neutral-900 font-serif">
-            {Object.values(fragranceStats).reduce((a, b) => a + b.count, 0)} Units
-          </p>
-          <p className="text-xs text-neutral-400">Extrait de Parfum editions sold</p>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 border border-[#e5dbc7] shadow-xs space-y-2">
-          <div className="flex justify-between items-center text-xs font-bold uppercase text-neutral-500">
-            <span>Customer Base</span>
-            <TrendingUp size={18} className="text-amber-700" />
+        {/* Month Selector Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-neutral-200 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-neutral-100 text-neutral-700 shrink-0">
+              <Calendar className="size-5" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">Selected Month</p>
+              <p className="text-sm font-bold text-neutral-900">
+                {selectedMonth === "all" ? "All Time History" : formatMonthName(selectedMonth)}
+              </p>
+            </div>
           </div>
-          <p className="text-3xl font-black text-neutral-900 font-serif">{totalVolume} Clients</p>
-          <p className="text-xs text-neutral-400">Active repeat order rate: 38%</p>
-        </div>
-      </div>
 
-      {/* Sales Channels Breakdown Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="bg-white rounded-3xl p-6 border border-[#e5dbc7] shadow-xs space-y-3">
-          <div className="size-10 rounded-2xl bg-neutral-100 text-neutral-800 flex items-center justify-center">
-            <Globe size={18} />
-          </div>
-          <h3 className="font-bold font-serif text-sm text-neutral-900">Web Storefront</h3>
-          <p className="text-2xl font-black text-[#1b4431]">
-            Rs. {Math.round(totalRevenue * 0.62).toLocaleString()}
-          </p>
-          <p className="text-[11px] text-neutral-400">Direct checkout cart orders</p>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 border border-[#e5dbc7] shadow-xs space-y-3">
-          <div className="size-10 rounded-2xl bg-pink-50 text-pink-700 flex items-center justify-center">
-            <InstagramIcon className="size-5" />
-          </div>
-          <h3 className="font-bold font-serif text-sm text-neutral-900">Instagram DM</h3>
-          <p className="text-2xl font-black text-[#1b4431]">
-            Rs. {Math.round(totalRevenue * 0.22).toLocaleString()}
-          </p>
-          <p className="text-[11px] text-neutral-400">Social inquiry direct closes</p>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 border border-[#e5dbc7] shadow-xs space-y-3">
-          <div className="size-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-            <MessageCircle size={18} />
-          </div>
-          <h3 className="font-bold font-serif text-sm text-neutral-900">WhatsApp Concierge</h3>
-          <p className="text-2xl font-black text-[#1b4431]">
-            Rs. {Math.round(totalRevenue * 0.12).toLocaleString()}
-          </p>
-          <p className="text-[11px] text-neutral-400">VIP personal consultations</p>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 border border-[#e5dbc7] shadow-xs space-y-3">
-          <div className="size-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center">
-            <MapPin size={18} />
-          </div>
-          <h3 className="font-bold font-serif text-sm text-neutral-900">Studio Walk-In</h3>
-          <p className="text-2xl font-black text-[#1b4431]">
-            Rs. {Math.round(totalRevenue * 0.04).toLocaleString()}
-          </p>
-          <p className="text-[11px] text-neutral-400">Karachi DHA atelier pickups</p>
-        </div>
-      </div>
-
-      {/* Best Performing Fragrances Ranking */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#e5dbc7] shadow-md space-y-6">
-        <div>
-          <h2 className="text-xl font-bold uppercase font-serif text-neutral-900">
-            Top Performing Fragrances
-          </h2>
-          <p className="text-xs text-neutral-500">Revenue generation ranked by perfume edition</p>
-        </div>
-
-        <div className="space-y-4">
-          {sortedBestSellers.map(([name, stat], idx) => {
-            const percent = totalRevenue > 0 ? Math.round((stat.revenue / totalRevenue) * 100) : 0;
-            return (
-              <div key={name} className="space-y-2 p-4 rounded-2xl bg-[#faf7f2] border border-[#eee6d7]">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <span className="size-6 rounded-lg bg-[#1b4431] text-[#d8c38c] text-xs font-bold flex items-center justify-center">
-                      0{idx + 1}
-                    </span>
-                    <span className="font-bold font-serif text-neutral-900">{name}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-black text-[#1b4431] text-sm">
-                      Rs. {stat.revenue.toLocaleString()}
-                    </span>
-                    <span className="text-xs text-neutral-400 block">{stat.count} bottles</span>
-                  </div>
-                </div>
-
-                <div className="w-full h-2 bg-[#eee6d7] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#b39b66] to-[#1b4431]"
-                    style={{ width: `${percent}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Manual Quick Sale Modal */}
-      {showManualModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-xl w-full border border-[#e5dbc7] shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center pb-3 border-b border-[#eee6d7]">
-              <div>
-                <h3 className="text-xl font-bold font-serif text-neutral-900">Record Quick Sale</h3>
-                <p className="text-xs text-neutral-500">Log order from Instagram, WhatsApp, or Walk-in</p>
-              </div>
-              <button onClick={() => setShowManualModal(false)} className="p-1.5 rounded-full hover:bg-neutral-100">
-                <X size={20} />
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedMonth("all")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition ${
+                selectedMonth === "all"
+                  ? "bg-black text-white"
+                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+              }`}
+            >
+              All Time
+            </button>
+            {availableMonths.map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setSelectedMonth(m)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition ${
+                  selectedMonth === m
+                    ? "bg-black text-white"
+                    : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                }`}
+              >
+                {formatMonthName(m)}
               </button>
+            ))}
+          </div>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-xs">
+            <div className="flex items-center justify-between text-neutral-500 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider">Gross Revenue</span>
+              <DollarSign className="size-4 text-emerald-600" />
+            </div>
+            <p className="text-2xl sm:text-3xl font-extrabold text-neutral-900">
+              Rs. {monthStats.totalRevenue.toLocaleString()}
+            </p>
+            <p className="text-xs text-neutral-400 mt-1">Total revenue collected</p>
+          </div>
+
+          <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-xs">
+            <div className="flex items-center justify-between text-neutral-500 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider">Total Sales</span>
+              <ShoppingBag className="size-4 text-neutral-600" />
+            </div>
+            <p className="text-2xl sm:text-3xl font-extrabold text-neutral-900">
+              {monthStats.totalSalesCount}
+            </p>
+            <p className="text-xs text-neutral-400 mt-1">Confirmed client dispatches</p>
+          </div>
+
+          <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-xs">
+            <div className="flex items-center justify-between text-neutral-500 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider">Avg Order Value</span>
+              <BarChart3 className="size-4 text-neutral-600" />
+            </div>
+            <p className="text-2xl sm:text-3xl font-extrabold text-neutral-900">
+              Rs. {monthStats.averageOrderValue.toLocaleString()}
+            </p>
+            <p className="text-xs text-neutral-400 mt-1">Per transaction average</p>
+          </div>
+
+          <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-xs">
+            <div className="flex items-center justify-between text-neutral-500 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider">Fulfillment</span>
+              <CheckCircle2 className="size-4 text-emerald-600" />
+            </div>
+            <p className="text-2xl sm:text-3xl font-extrabold text-emerald-700">
+              {monthStats.deliveredCount} Delivered
+            </p>
+            <p className="text-xs text-neutral-400 mt-1">{monthStats.pendingCount} pending / in transit</p>
+          </div>
+        </div>
+
+        {/* Channel Breakdown */}
+        <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-xs space-y-4">
+          <h2 className="text-base font-bold text-neutral-900">Sales by Channel ({selectedMonth === "all" ? "All Time" : formatMonthName(selectedMonth)})</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {(["website", "instagram", "reference", "whatsapp", "direct"] as SalesChannel[]).map((ch) => {
+              const meta = getChannelMeta(ch);
+              const count = monthStats.channelCounts[ch].count;
+              const rev = monthStats.channelCounts[ch].revenue;
+
+              return (
+                <button
+                  key={ch}
+                  type="button"
+                  onClick={() => setChannelFilter(channelFilter === ch ? "all" : ch)}
+                  className={`p-4 rounded-xl border text-left transition ${
+                    channelFilter === ch
+                      ? "border-black bg-neutral-900 text-white ring-2 ring-neutral-400"
+                      : "border-neutral-200 bg-neutral-50 hover:bg-neutral-100"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span>{meta.iconEmoji}</span>
+                    <span className="text-xs font-bold">{meta.label}</span>
+                  </div>
+                  <p className="text-lg font-extrabold">{count} orders</p>
+                  <p className={`text-xs mt-0.5 ${channelFilter === ch ? "text-neutral-300" : "text-neutral-500"}`}>
+                    Rs. {rev.toLocaleString()}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Orders Table */}
+        <div className="bg-white rounded-2xl border border-neutral-200 shadow-xs overflow-hidden">
+          <div className="p-4 sm:p-6 border-b border-neutral-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 className="text-base font-bold text-neutral-900">Sales Transactions</h2>
+              <p className="text-xs text-neutral-500">Showing {filteredOrders.length} orders matching your filters</p>
             </div>
 
-            <form onSubmit={handleRecordManualSale} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-neutral-700 mb-1">Customer Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={manualForm.firstName}
-                    onChange={(e) => setManualForm({ ...manualForm, firstName: e.target.value })}
-                    placeholder="e.g. Tariq"
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#e5dbc7] bg-[#faf7f2]"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-neutral-700 mb-1">Phone Number *</label>
-                  <input
-                    type="tel"
-                    required
-                    value={manualForm.phoneNum}
-                    onChange={(e) => setManualForm({ ...manualForm, phoneNum: e.target.value })}
-                    placeholder="3001234567"
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#e5dbc7] bg-[#faf7f2]"
-                  />
-                </div>
-              </div>
+            <div className="relative w-full sm:w-64">
+              <Search className="size-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search orders..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-neutral-200 rounded-xl text-xs focus:outline-none focus:border-black"
+              />
+            </div>
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-neutral-700 mb-1">City</label>
-                  <input
-                    type="text"
-                    value={manualForm.city}
-                    onChange={(e) => setManualForm({ ...manualForm, city: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#e5dbc7] bg-[#faf7f2]"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-neutral-700 mb-1">Acquisition Channel</label>
-                  <select
-                    value={manualForm.channel}
-                    onChange={(e) => setManualForm({ ...manualForm, channel: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#e5dbc7] bg-[#faf7f2]"
-                  >
-                    <option value="Instagram DM">Instagram DM</option>
-                    <option value="WhatsApp Direct">WhatsApp Direct</option>
-                    <option value="Walk-in">Studio Walk-In</option>
-                    <option value="Phone Referral">Phone Referral</option>
-                  </select>
-                </div>
-              </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm divide-y divide-neutral-100">
+              <thead className="bg-neutral-50 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                <tr>
+                  <th className="py-3 px-6">Order</th>
+                  <th className="py-3 px-6">Channel</th>
+                  <th className="py-3 px-6">Customer</th>
+                  <th className="py-3 px-6">City</th>
+                  <th className="py-3 px-6">Status</th>
+                  <th className="py-3 px-6">Total</th>
+                  <th className="py-3 px-6 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {filteredOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-10 text-center text-xs text-neutral-400">
+                      No orders found for the selected period.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredOrders.map((o) => {
+                    const ch = getOrderChannel(o);
+                    const meta = getChannelMeta(ch);
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-neutral-700 mb-1">Select Fragrance</label>
-                  <select
-                    value={manualForm.productId}
-                    onChange={(e) => setManualForm({ ...manualForm, productId: Number(e.target.value) })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#e5dbc7] bg-[#faf7f2]"
-                  >
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-neutral-700 mb-1">Size Edition</label>
-                  <select
-                    value={manualForm.variantLabel}
-                    onChange={(e) => setManualForm({ ...manualForm, variantLabel: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#e5dbc7] bg-[#faf7f2]"
-                  >
-                    <option value="50ml Extrait">50ml Extrait</option>
-                    <option value="100ml Extrait">100ml Extrait</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-neutral-700 mb-1">Payment Method</label>
-                  <select
-                    value={manualForm.paymentMethod}
-                    onChange={(e) => setManualForm({ ...manualForm, paymentMethod: e.target.value as any })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#e5dbc7] bg-[#faf7f2]"
-                  >
-                    <option value="bank_transfer">Bank Transfer / Raast</option>
-                    <option value="cod">Cash on Delivery</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-neutral-700 mb-1">Payment Status</label>
-                  <select
-                    value={manualForm.paymentStatus}
-                    onChange={(e) => setManualForm({ ...manualForm, paymentStatus: e.target.value as any })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#e5dbc7] bg-[#faf7f2]"
-                  >
-                    <option value="paid">Payment Received</option>
-                    <option value="unpaid">Unpaid / Collect on Delivery</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-[#eee6d7] flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowManualModal(false)}
-                  className="px-5 py-2.5 rounded-xl border border-neutral-300 font-bold uppercase tracking-wider text-neutral-600 hover:bg-neutral-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#1b4431] text-white font-bold uppercase tracking-wider hover:bg-[#123023]"
-                >
-                  Record & Deduct Stock
-                </button>
-              </div>
-            </form>
+                    return (
+                      <tr key={o.id} className="hover:bg-neutral-50/80 transition">
+                        <td className="py-3.5 px-6 font-mono text-xs font-bold text-neutral-900">
+                          #{o.id}
+                        </td>
+                        <td className="py-3.5 px-6">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${meta.bg}`}>
+                            <span>{meta.iconEmoji}</span>
+                            <span>{meta.label}</span>
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-6 font-medium text-neutral-900">
+                          {o.firstName} {o.lastName}
+                        </td>
+                        <td className="py-3.5 px-6 text-neutral-600">
+                          {o.city}
+                        </td>
+                        <td className="py-3.5 px-6">
+                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusClasses[o.status] || "bg-neutral-100 text-neutral-700"}`}>
+                            {o.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-6 font-bold text-neutral-900">
+                          Rs. {o.totalAmount.toLocaleString()}
+                        </td>
+                        <td className="py-3.5 px-6 text-right">
+                          <Link
+                            href={`/admin/manageOrders/${o.id}`}
+                            className="inline-flex items-center px-3 py-1 rounded-lg border border-neutral-200 text-xs font-semibold hover:border-black transition"
+                          >
+                            Details
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      )}
+
+        {/* Manual Sale Modal */}
+        <ManualSaleModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={() => fetchOrders()}
+        />
+      </div>
     </div>
   );
 }

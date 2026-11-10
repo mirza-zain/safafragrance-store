@@ -39,9 +39,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-16">
           {/* Brand Presentation */}
           <div className="md:col-span-4 flex flex-col items-start space-y-4">
-            <Link href="/" className="inline-block bg-white/95 rounded-2xl p-2.5 shadow-md">
-              <div className="relative h-12 w-44">
-                <Image src="/logo.png" alt="Safa Fragrance" fill className="object-contain" />
+            <Link href="/" className="inline-block transition-transform hover:scale-105">
+              <div className="relative h-20 w-48 sm:h-24 sm:w-60">
+                <Image src="/logo-gold.png" alt="Safa Fragrance" fill className="object-contain object-left" />
               </div>
             </Link>
             <p className="text-sm text-neutral-300 leading-relaxed max-w-sm pt-2">

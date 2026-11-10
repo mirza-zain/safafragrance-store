@@ -1,333 +1,224 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import {
-  Search,
-  Filter,
-  FileText,
-  Copy,
-  Check,
-  Eye,
-  CheckCircle2,
-  Clock,
-  Truck,
-  X,
-  Printer
-} from "lucide-react";
 import { Order } from "@/app/lib/types";
+import { Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import QuickRecordSaleButton from "../(component)/QuickRecordSaleButton";
+import { getOrderChannel, getChannelMeta } from "@/app/lib/order-utils";
 
-export default function ManageOrdersPage() {
+const statusClasses: Record<string, string> = {
+  pending: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
+  processing: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200",
+  shipped: "bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200",
+  delivered: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+  cancelled: "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200"
+};
+
+export default function ManageOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [search, setSearch] = useState("");
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [previewReceipt, setPreviewReceipt] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const loadOrders = async () => {
-    setLoading(true);
+  const handleDelete = async (orderId: number) => {
+    if (!window.confirm("Delete this order? Its product stock will be restored.")) return;
+
+    setDeletingId(orderId);
+    setActionError("");
     try {
-      const res = await fetch("/api/orders");
-      if (res.ok) {
-        const data = await res.json();
-        setOrders(data);
-      }
-    } catch (err) {
-      console.error("Failed to load orders", err);
+      const response = await fetch(`/api/orders/${orderId}`, { method: "DELETE" });
+      const data: { error?: string } = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Unable to delete order");
+
+      setOrders((currentOrders) => currentOrders.filter((order) => order.id !== orderId));
+    } catch (error) {
+      setActionError((error as Error).message);
     } finally {
-      setLoading(false);
+      setDeletingId(null);
     }
   };
 
   useEffect(() => {
-    loadOrders();
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch("/api/orders");
+        if (!response.ok) throw new Error("Error Fetching Orders");
+        const data: Order[] = await response.json();
+        setOrders(data);
+        setLoading(false);
+      } catch (error) {
+        setError((error as Error).message);
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
   }, []);
 
-  const handleStatusChange = async (orderId: number, nextStatus: string) => {
-    try {
-      const res = await fetch(`/api/orders/${orderId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus })
-      });
-      if (res.ok) {
-        setOrders((prev) =>
-          prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus as any } : o))
-        );
-      }
-    } catch (err) {
-      alert("Failed to update status");
-    }
-  };
+  if (loading) return (
+    <div className="min-h-screen px-4 py-6 sm:px-6 sm:py-10 bg-neutral-50">
+      <div className="mx-auto max-w-6xl rounded-2xl border border-neutral-200 bg-white p-8 shadow-xs">
+        <div className="animate-pulse space-y-4">
+          <div className="h-7 w-48 rounded bg-neutral-200" />
+          <div className="h-12 rounded bg-neutral-100" />
+          <div className="h-64 rounded bg-neutral-100" />
+        </div>
+      </div>
+    </div>
+  );
 
-  const handlePaymentStatusChange = async (orderId: number, nextPaymentStatus: string) => {
-    try {
-      const res = await fetch(`/api/orders/${orderId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentStatus: nextPaymentStatus })
-      });
-      if (res.ok) {
-        setOrders((prev) =>
-          prev.map((o) => (o.id === orderId ? { ...o, paymentStatus: nextPaymentStatus as any } : o))
-        );
-      }
-    } catch (err) {
-      alert("Failed to update payment status");
-    }
-  };
-
-  const filtered = orders.filter((o) => {
-    const matchesStatus = filterStatus === "all" || o.status === filterStatus;
-    const matchesSearch =
-      o.trackingId.toLowerCase().includes(search.toLowerCase()) ||
-      o.firstName.toLowerCase().includes(search.toLowerCase()) ||
-      o.lastName.toLowerCase().includes(search.toLowerCase()) ||
-      o.city.toLowerCase().includes(search.toLowerCase()) ||
-      o.phoneNum.includes(search);
-    return matchesStatus && matchesSearch;
-  });
+  if (error) return (
+    <div className="flex min-h-screen items-center justify-center px-4 py-10 bg-neutral-50">
+      <div className="w-full max-w-md rounded-2xl border border-rose-500/30 bg-rose-50 p-6 text-center shadow-lg">
+        <p className="text-lg font-semibold text-rose-700">Something went wrong</p>
+        <p className="mt-2 text-sm text-rose-600">{error}</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#b39b66]">
-            Fulfillment & Logistics
-          </span>
-          <h1 className="text-3xl font-black uppercase tracking-tight text-neutral-900 font-serif">
-            Manage Customer Orders
-          </h1>
-        </div>
-
-        <button
-          onClick={loadOrders}
-          className="px-4 py-2 rounded-xl border border-[#d8cbb5] bg-white text-xs font-bold uppercase tracking-wider hover:border-[#1b4431] transition"
-        >
-          Refresh Feed
-        </button>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="bg-white rounded-3xl p-6 border border-[#e5dbc7] shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full sm:w-96">
-            <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by Tracking ID, Name, Phone, City..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-xs focus:outline-hidden focus:border-[#1b4431]"
-            />
+    <div className="min-h-screen bg-neutral-50 px-4 py-10 text-neutral-900">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm font-medium uppercase tracking-[0.28em] text-neutral-500">Orders</p>
+            <h1 className="mt-2 text-3xl font-bold md:text-4xl font-serif">Manage Orders</h1>
           </div>
-
-          <span className="text-xs font-medium text-neutral-500">
-            {filtered.length} of {orders.length} orders
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="w-fit rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-700 shadow-xs">
+              {orders.length} total orders
+            </div>
+            <QuickRecordSaleButton />
+          </div>
         </div>
 
-        {/* Status Filter Buttons */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#f0e8d9]">
-          {[
-            { id: "all", label: "All Orders" },
-            { id: "pending", label: "Pending" },
-            { id: "processing", label: "Processing / Bottling" },
-            { id: "shipped", label: "Shipped" },
-            { id: "delivered", label: "Delivered" },
-            { id: "cancelled", label: "Cancelled" }
-          ].map((status) => (
-            <button
-              key={status.id}
-              onClick={() => setFilterStatus(status.id)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition ${
-                filterStatus === status.id
-                  ? "bg-[#1b4431] text-white"
-                  : "bg-[#faf7f2] border border-[#e5dbc7] text-neutral-600 hover:border-[#1b4431]"
-              }`}
-            >
-              {status.label}
-            </button>
-          ))}
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-amber-300/80 bg-amber-50/60 p-5 shadow-xs">
+            <p className="text-sm font-medium text-amber-900">Needs Verification</p>
+            <p className="mt-2 text-2xl font-bold text-amber-700">
+              {orders.filter((order) => order.paymentMethod === "bank_transfer" && (order.paymentStatus === "pending_verification" || !!order.paymentReceipt)).length}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
+            <p className="text-sm text-neutral-600">Pending</p>
+            <p className="mt-2 text-2xl font-bold text-amber-700">
+              {orders.filter((order) => order.status === "pending").length}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
+            <p className="text-sm text-neutral-600">Processing</p>
+            <p className="mt-2 text-2xl font-bold text-sky-700">
+              {orders.filter((order) => order.status === "processing").length}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
+            <p className="text-sm text-neutral-600">Delivered</p>
+            <p className="mt-2 text-2xl font-bold text-emerald-700">
+              {orders.filter((order) => order.status === "delivered").length}
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Orders Table */}
-      <div className="bg-white rounded-3xl border border-[#e5dbc7] shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#faf7f2] border-b border-[#eee6d7] text-neutral-400 uppercase font-bold tracking-wider">
-              <tr>
-                <th className="py-4 px-6">Tracking / Date</th>
-                <th className="py-4 px-4">Client</th>
-                <th className="py-4 px-4">Editions Ordered</th>
-                <th className="py-4 px-4">Payment</th>
-                <th className="py-4 px-4">Proof</th>
-                <th className="py-4 px-4">Total</th>
-                <th className="py-4 px-4">Status Update</th>
-                <th className="py-4 px-6 text-right">Invoice</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 font-medium">
-              {loading ? (
+        {actionError && <p className="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{actionError}</p>}
+
+        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-3xl divide-y divide-neutral-200 text-left">
+              <thead className="bg-neutral-100">
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-neutral-400">
-                    Loading orders...
-                  </td>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-600">Order & Channel</th>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-600">Customer</th>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-600">Payment & Total</th>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-600">Status</th>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-600">Date</th>
+                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-600">Action</th>
                 </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-neutral-400">
-                    No orders match your filter.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((order) => (
-                  <tr key={order.id} className="hover:bg-[#faf7f2] transition">
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-[#1b4431] text-sm">
-                          {order.trackingId}
-                        </span>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(order.trackingId);
-                            setCopiedId(order.trackingId);
-                            setTimeout(() => setCopiedId(null), 2000);
-                          }}
-                          className="p-1 rounded-md text-neutral-400 hover:text-black"
-                          title="Copy Tracking ID"
-                        >
-                          {copiedId === order.trackingId ? <Check size={13} className="text-emerald-700" /> : <Copy size={13} />}
-                        </button>
-                      </div>
-                      <p className="text-[11px] text-neutral-400 mt-0.5">
-                        {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </td>
+              </thead>
 
-                    <td className="py-4 px-4">
-                      <p className="font-bold text-neutral-900">
-                        {order.firstName} {order.lastName}
-                      </p>
-                      <p className="text-neutral-500 text-[11px]">{order.phoneCountryCode} {order.phoneNum}</p>
-                      <p className="text-neutral-400 text-[11px]">{order.city}</p>
-                    </td>
-
-                    <td className="py-4 px-4 max-w-48">
-                      <div className="space-y-1">
-                        {order.items.map((i, idx) => (
-                          <div key={idx} className="text-[11px]">
-                            <span className="font-bold text-neutral-800">{i.productName}</span>{" "}
-                            {i.variantLabel && <span className="text-neutral-500">({i.variantLabel})</span>}{" "}
-                            <span className="text-[#1b4431] font-bold">×{i.quantity}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-
-                    <td className="py-4 px-4">
-                      <span className="capitalize font-bold text-neutral-800 block">
-                        {order.paymentMethod === "cod" ? "Cash on Delivery" : "Bank Transfer"}
-                      </span>
-                      <select
-                        value={order.paymentStatus}
-                        onChange={(e) => handlePaymentStatusChange(order.id, e.target.value)}
-                        className={`text-[10px] font-bold uppercase rounded-md px-2 py-0.5 mt-1 border ${
-                          order.paymentStatus === "paid"
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-300"
-                            : order.paymentStatus === "pending_verification"
-                            ? "bg-amber-50 text-amber-800 border-amber-300"
-                            : "bg-neutral-100 text-neutral-600 border-neutral-300"
-                        }`}
-                      >
-                        <option value="unpaid">Unpaid</option>
-                        <option value="pending_verification">Review Proof</option>
-                        <option value="paid">Payment Verified</option>
-                        <option value="rejected">Declined</option>
-                      </select>
-                    </td>
-
-                    <td className="py-4 px-4">
-                      {order.paymentReceipt ? (
-                        <button
-                          onClick={() => setPreviewReceipt(order.paymentReceipt!)}
-                          className="px-2.5 py-1 rounded-lg bg-[#faf7f2] border border-[#e5dbc7] hover:border-[#1b4431] text-[11px] font-bold text-[#1b4431] flex items-center gap-1 transition"
-                        >
-                          <Eye size={12} />
-                          <span>View Proof</span>
-                        </button>
-                      ) : (
-                        <span className="text-neutral-400 text-[11px]">No file</span>
-                      )}
-                    </td>
-
-                    <td className="py-4 px-4 font-bold text-neutral-900">
-                      Rs. {Number(order.totalAmount).toLocaleString()}
-                    </td>
-
-                    <td className="py-4 px-4">
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                        className="px-2.5 py-1.5 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-xs font-bold uppercase tracking-wider text-neutral-800 focus:outline-hidden"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                    </td>
-
-                    <td className="py-4 px-6 text-right">
-                      <Link
-                        href={`/admin/manageOrders/${order.id}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1b4431] text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#123023] transition shadow-xs"
-                      >
-                        <Printer size={13} />
-                        <span>Invoice</span>
-                      </Link>
+              <tbody className="divide-y divide-neutral-200 text-sm">
+                {orders.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-neutral-400">
+                      No orders received yet.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                ) : (
+                  orders.map((order) => {
+                    const channel = getOrderChannel(order);
+                    const meta = getChannelMeta(channel);
 
-      {/* Receipt Preview Lightbox Modal */}
-      {previewReceipt && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-lg w-full border border-[#e5dbc7] shadow-2xl space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b border-neutral-100">
-              <h3 className="font-bold font-serif text-neutral-900">Payment Screenshot Proof</h3>
-              <button
-                onClick={() => setPreviewReceipt(null)}
-                className="p-1.5 rounded-full hover:bg-neutral-100 text-neutral-500"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="relative aspect-4/5 w-full rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200">
-              <Image src={previewReceipt} alt="Bank Proof" fill className="object-contain" />
-            </div>
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setPreviewReceipt(null)}
-                className="px-5 py-2 rounded-xl bg-neutral-900 text-white font-bold text-xs uppercase"
-              >
-                Close
-              </button>
-            </div>
+                    return (
+                      <tr key={order.id} className="transition hover:bg-neutral-50">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-neutral-900">#{order.id}</span>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${meta.bg}`}>
+                              <span>{meta.iconEmoji}</span>
+                              <span>{meta.label}</span>
+                            </span>
+                          </div>
+                          <p className="text-[10px] font-mono text-neutral-400 mt-0.5">{order.trackingId}</p>
+                        </td>
+                        <td className="px-6 py-4 text-neutral-700">{order.firstName} {order.lastName}</td>
+                        <td className="px-6 py-4">
+                          <span className="font-medium text-neutral-900">Rs. {order.totalAmount.toLocaleString()}</span>
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                            <span className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
+                              {order.paymentMethod === "bank_transfer" ? "Bank Transfer" : "COD"}
+                            </span>
+                            {order.paymentMethod === "bank_transfer" && (
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                order.paymentStatus === "paid"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : order.paymentReceipt
+                                  ? "bg-amber-100 text-amber-800 ring-1 ring-amber-300"
+                                  : "bg-neutral-100 text-neutral-700"
+                              }`}>
+                                {order.paymentReceipt && order.paymentStatus !== "paid"
+                                  ? "Verify Proof"
+                                  : order.paymentStatus === "paid"
+                                  ? "Paid"
+                                  : order.paymentStatus}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClasses[order.status] ?? "bg-neutral-100 text-neutral-700"}`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-neutral-500">{new Date(order.createdAt).toLocaleDateString()}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/admin/manageOrders/${order.id}`}
+                              className="inline-flex items-center rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 transition hover:border-black hover:bg-neutral-100"
+                            >
+                              View
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => void handleDelete(order.id)}
+                              disabled={deletingId === order.id}
+                              aria-label={`Delete order ${order.id}`}
+                              className="inline-flex items-center rounded-lg border border-rose-500/40 bg-rose-500/10 p-1.5 text-rose-700 transition hover:border-rose-500 hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
-

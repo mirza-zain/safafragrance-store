@@ -1,302 +1,194 @@
 'use client';
 
 import { use, useEffect, useState, Suspense } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import {
-  ArrowLeft,
-  Printer,
-  CheckCircle2,
-  Truck,
-  ShieldCheck,
-  Clock,
-  Phone,
-  Mail,
-  MapPin,
-  ExternalLink,
-  Copy,
-  Check
-} from "lucide-react";
+import StatusControl from "./StatusControl";
+import PaymentVerificationCard from "./PaymentVerificationCard";
+import InvoicePrintButton from "./InvoicePrintButton";
 import { Order } from "@/app/lib/types";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
-type PageProps = {
-  params: Promise<{ id: string }>;
+type Props = {
+  params: Promise<{
+    id: string;
+  }>;
 };
 
-function OrderInvoiceContent({ params }: PageProps) {
+const statusClasses: Record<string, string> = {
+  pending: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
+  processing: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200",
+  shipped: "bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200",
+  delivered: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+  cancelled: "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200"
+};
+
+function OrderDetailsContent({ params }: Props) {
   const { id } = use(params);
-  const [order, setOrder] = useState<Order | null>(null);
+  const [data, setData] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadOrder() {
       try {
+        setLoading(true);
         const res = await fetch(`/api/orders/${id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setOrder(data);
-        }
+        if (!res.ok) throw new Error("Order not found");
+        const json = await res.json();
+        setData(json);
       } catch (err) {
-        console.error("Failed to load order invoice", err);
+        setError((err as Error).message);
       } finally {
         setLoading(false);
       }
     }
+
     loadOrder();
   }, [id]);
 
-  const updateStatus = async (status: string) => {
-    if (!order) return;
-    try {
-      const res = await fetch(`/api/orders/${order.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status })
-      });
-      if (res.ok) {
-        const updated = await res.json();
-        setOrder(updated);
-      }
-    } catch {
-      alert("Failed to update status");
-    }
-  };
-
-  const updatePaymentStatus = async (paymentStatus: string) => {
-    if (!order) return;
-    try {
-      const res = await fetch(`/api/orders/${order.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentStatus })
-      });
-      if (res.ok) {
-        const updated = await res.json();
-        setOrder(updated);
-      }
-    } catch {
-      alert("Failed to update payment status");
-    }
-  };
-
   if (loading) {
-    return <div className="py-20 text-center text-xs text-neutral-400">Loading invoice document...</div>;
+    return (
+      <div className="min-h-screen bg-neutral-50 p-6 sm:p-10 flex items-center justify-center">
+        <div className="size-8 border-2 border-neutral-300 border-t-black rounded-full animate-spin" />
+      </div>
+    );
   }
 
-  if (!order) {
+  if (error || !data) {
     return (
-      <div className="py-20 text-center">
-        <h2 className="text-xl font-bold font-serif">Order Not Found</h2>
-        <Link href="/admin/manageOrders" className="mt-4 text-xs font-bold text-[#1b4431] underline">
-          Return to Orders
-        </Link>
+      <div className="min-h-screen bg-neutral-50 p-6 sm:p-10 flex items-center justify-center">
+        <div className="rounded-2xl bg-white border border-neutral-200 p-8 text-center max-w-md shadow-xs">
+          <p className="text-base font-bold text-neutral-800">Order not found</p>
+          <Link href="/admin/manageOrders" className="mt-4 inline-block text-xs font-semibold text-blue-600 hover:underline">
+            Return to Orders
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Top action bar (hidden during print) */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
-        <Link
-          href="/admin/manageOrders"
-          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-600 hover:text-[#1b4431] transition"
-        >
-          <ArrowLeft size={14} /> Back to Orders
-        </Link>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Quick status actions */}
-          {order.paymentStatus !== "paid" && (
-            <button
-              onClick={() => updatePaymentStatus("paid")}
-              className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold uppercase tracking-wider transition shadow-xs"
-            >
-              Verify Payment
-            </button>
-          )}
-
-          {order.status === "pending" && (
-            <button
-              onClick={() => updateStatus("processing")}
-              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold uppercase tracking-wider transition shadow-xs"
-            >
-              Begin Bottling
-            </button>
-          )}
-
-          {order.status === "processing" && (
-            <button
-              onClick={() => updateStatus("shipped")}
-              className="px-3.5 py-2 rounded-xl bg-[#1b4431] hover:bg-[#123023] text-white text-xs font-bold uppercase tracking-wider transition shadow-xs"
-            >
-              Dispatch Parcel
-            </button>
-          )}
-
-          <button
-            onClick={() => window.print()}
-            className="px-5 py-2 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2 shadow-md transition"
+    <div className="min-h-screen bg-neutral-50 px-4 py-6 text-neutral-900 sm:py-10 print:min-h-0 print:bg-white print:p-0">
+      <div className="mx-auto max-w-5xl space-y-6">
+        {/* Back Link */}
+        <div className="print:hidden">
+          <Link
+            href="/admin/manageOrders"
+            className="inline-flex items-center gap-2 text-sm font-medium text-neutral-500 hover:text-black transition"
           >
-            <Printer size={15} />
-            <span>Print Invoice & Packing Slip</span>
-          </button>
+            <ArrowLeft className="size-4" />
+            <span>Back to Orders</span>
+          </Link>
         </div>
-      </div>
 
-      {/* Printable Invoice Container */}
-      <div className="bg-white rounded-3xl p-8 sm:p-12 border border-[#e5dbc7] shadow-xl max-w-4xl mx-auto print:border-none print:shadow-none print:p-0">
-        {/* Invoice Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 pb-8 border-b-2 border-neutral-900">
-          <div>
-            <div className="relative h-12 w-44 mb-2">
-              <Image src="/logo.png" alt="Safa Fragrance" fill priority className="object-contain object-left" />
+        {/* Top Summary Card */}
+        <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-xs md:p-8 print:hidden">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.28em] text-neutral-500">Order</p>
+              <h1 className="mt-2 text-3xl font-bold text-neutral-900 font-serif">#{data.id}</h1>
             </div>
-            <p className="text-xs uppercase font-bold tracking-[0.25em] text-[#b39b66]">
-              Haute Parfumerie • Pakistan
-            </p>
-            <p className="text-xs text-neutral-500 mt-1">DHA Phase 6, Karachi • +92 300 1234567</p>
-          </div>
-
-          <div className="text-left sm:text-right space-y-1">
-            <span className="text-xs uppercase font-bold tracking-widest text-neutral-400 block">
-              Official Tax Invoice & Dispatch Slip
-            </span>
-            <p className="text-2xl font-black font-mono tracking-wider text-neutral-900">
-              {order.trackingId}
-            </p>
-            <p className="text-xs text-neutral-500">
-              Date: {new Date(order.createdAt).toLocaleDateString()} • {new Date(order.createdAt).toLocaleTimeString()}
-            </p>
-          </div>
-        </div>
-
-        {/* Client & Shipping Metadata */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 py-8 border-b border-[#eee6d7] text-xs">
-          <div className="space-y-1.5">
-            <h3 className="font-bold uppercase tracking-wider text-neutral-400 text-[10px]">
-              Customer & Recipient
-            </h3>
-            <p className="text-base font-bold text-neutral-900 font-serif">
-              {order.firstName} {order.lastName}
-            </p>
-            <p className="text-neutral-600">Phone: {order.phoneCountryCode} {order.phoneNum}</p>
-            <p className="text-neutral-600">Email: {order.email}</p>
-          </div>
-
-          <div className="space-y-1.5 sm:text-right">
-            <h3 className="font-bold uppercase tracking-wider text-neutral-400 text-[10px]">
-              Destination & Carrier
-            </h3>
-            <p className="font-semibold text-neutral-900">{order.address}</p>
-            <p className="font-semibold text-neutral-900">{order.city}, {order.country}</p>
-            <p className="text-neutral-500">Carrier: {order.carrier || "Safa Concierge Express"}</p>
-            <div className="pt-1 flex items-center justify-start sm:justify-end gap-2">
-              <span className="font-bold uppercase text-[10px] px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700">
-                Payment: {order.paymentMethod === "cod" ? "Cash on Delivery" : "Bank Transfer"}
+            <div className="flex flex-wrap items-center gap-3">
+              <span className={`inline-flex rounded-full px-3 py-1.5 text-sm font-semibold ${statusClasses[data.status] ?? "bg-neutral-100 text-neutral-700"}`}>
+                {data.status}
               </span>
-              <span
-                className={`font-bold uppercase text-[10px] px-2 py-0.5 rounded-md ${
-                  order.paymentStatus === "paid"
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-amber-100 text-amber-800"
-                }`}
-              >
-                {order.paymentStatus === "paid" ? "Paid & Verified" : "Verification Pending"}
-              </span>
+              <StatusControl orderId={data.id} initialStatus={data.status} />
             </div>
           </div>
-        </div>
 
-        {/* Itemized Fragrance Table */}
-        <div className="py-8">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b-2 border-neutral-200 text-neutral-500 uppercase font-bold tracking-wider">
-                <th className="pb-3">Fragrance Edition</th>
-                <th className="pb-3">Size / Formulation</th>
-                <th className="pb-3 text-center">Qty</th>
-                <th className="pb-3 text-right">Unit Price</th>
-                <th className="pb-3 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 font-medium">
-              {order.items.map((item, idx) => (
-                <tr key={idx}>
-                  <td className="py-4">
-                    <p className="font-bold text-neutral-900 text-sm font-serif">{item.productName}</p>
-                    <p className="text-[10px] text-[#b39b66] uppercase font-bold tracking-wider">
-                      Extrait de Parfum
-                    </p>
-                  </td>
-                  <td className="py-4 text-neutral-600 font-semibold">
-                    {item.variantLabel || "Standard Bottle"}
-                  </td>
-                  <td className="py-4 text-center font-bold text-neutral-900">{item.quantity}</td>
-                  <td className="py-4 text-right text-neutral-600">
-                    Rs. {Number(item.price).toLocaleString()}
-                  </td>
-                  <td className="py-4 text-right font-bold text-neutral-900">
-                    Rs. {(item.price * item.quantity).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Financial Summary */}
-        <div className="border-t-2 border-neutral-200 pt-6 flex justify-end text-xs">
-          <div className="w-64 space-y-2">
-            <div className="flex justify-between text-neutral-600">
-              <span>Subtotal:</span>
-              <span className="font-bold text-neutral-900">Rs. {Number(order.subTotal).toLocaleString()}</span>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+              <p className="text-sm text-neutral-500">Customer</p>
+              <p className="mt-2 text-lg font-semibold text-neutral-900">{data.firstName} {data.lastName}</p>
             </div>
-            {order.discountAmount > 0 && (
-              <div className="flex justify-between text-emerald-700 font-bold">
-                <span>Discount ({order.discountCode || "Promo"}):</span>
-                <span>- Rs. {Number(order.discountAmount).toLocaleString()}</span>
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+              <p className="text-sm text-neutral-500">Total</p>
+              <p className="mt-2 text-lg font-semibold text-emerald-700">Rs. {data.totalAmount.toLocaleString()}</p>
+              <div className="mt-3 space-y-1 text-xs text-neutral-500">
+                <p>Subtotal: Rs. {data.subTotal.toLocaleString()}</p>
+                <p>Delivery: Rs. {data.deliveryAmount.toLocaleString()}</p>
+                {data.discountAmount > 0 && <p>Discount: Rs. {data.discountAmount.toLocaleString()}{data.discountCode ? ` (${data.discountCode})` : ""}</p>}
               </div>
-            )}
-            <div className="flex justify-between text-neutral-600">
-              <span>Delivery Charges:</span>
-              <span className="font-bold text-neutral-900">
-                {Number(order.deliveryAmount) === 0 ? "FREE" : `Rs. ${Number(order.deliveryAmount).toLocaleString()}`}
-              </span>
             </div>
-            <div className="pt-3 border-t-2 border-neutral-900 flex justify-between items-baseline">
-              <span className="text-base font-bold text-neutral-900 font-serif">Grand Total:</span>
-              <span className="text-xl font-black text-[#1b4431]">
-                Rs. {Number(order.totalAmount).toLocaleString()}
-              </span>
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+              <p className="text-sm text-neutral-500">Date</p>
+              <p className="mt-2 text-lg font-semibold text-neutral-900">{new Date(data.createdAt).toLocaleDateString()}</p>
             </div>
           </div>
         </div>
 
-        {/* Official Footer Note & Seal */}
-        <div className="mt-12 pt-8 border-t border-[#eee6d7] flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left text-xs text-neutral-400">
-          <div>
-            <p className="font-bold text-neutral-800 uppercase tracking-widest font-serif text-[11px]">
-              Safa Fragrance Haute Parfumerie
-            </p>
-            <p className="text-[11px] mt-0.5">
-              Hand-poured, matured, and sealed in Karachi, Pakistan. All formulations cruelty-free.
-            </p>
+        {/* Payment Verification Card */}
+        <div className="print:hidden">
+          <PaymentVerificationCard
+            orderId={data.id}
+            totalAmount={data.totalAmount}
+            paymentMethod={data.paymentMethod}
+            initialPaymentStatus={data.paymentStatus}
+            paymentReceipt={data.paymentReceipt}
+          />
+        </div>
+
+        {/* Items & Customer Information Grid */}
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] print:hidden">
+          <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-xs">
+            <h2 className="text-xl font-semibold text-neutral-900 font-serif">Items</h2>
+            <div className="mt-5 space-y-4">
+              {data.items.map((it, idx) => (
+                <div key={idx} className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                  <div>
+                    <p className="font-medium text-neutral-900">{it.productName || `Fragrance #${it.productId}`}</p>
+                    {it.variantLabel && <p className="mt-1 text-sm text-neutral-500">Size: {it.variantLabel}</p>}
+                    <p className="mt-1 text-sm text-neutral-500">Quantity: {it.quantity}</p>
+                  </div>
+                  <p className="text-base font-semibold text-neutral-900">Rs. {it.price.toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="p-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-[#1b4431] font-bold text-[10px] uppercase tracking-widest">
-            ✦ Sealed Authentic Batch ✦
+
+          <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-xs">
+            <h2 className="text-xl font-semibold text-neutral-900 font-serif">Customer Information</h2>
+            <div className="mt-5 space-y-4 text-sm text-neutral-700">
+              <div>
+                <p className="text-neutral-500">Email</p>
+                <p className="mt-1 text-neutral-900 font-medium">{data.email}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500">Phone</p>
+                <p className="mt-1 text-neutral-900 font-medium">{data.phoneNum}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500">Destination Address</p>
+                <p className="mt-1 text-neutral-900 font-medium">{data.address}</p>
+                <p className="mt-0.5 text-xs font-semibold text-neutral-700">
+                  {data.city}, Pakistan
+                </p>
+              </div>
+              {data.notes && (
+                <div>
+                  <p className="text-neutral-500">Order Notes</p>
+                  <p className="mt-1 text-neutral-900 italic text-xs">{data.notes}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Invoice Print View */}
+        <InvoicePrintButton order={data} />
       </div>
     </div>
   );
 }
 
-export default function OrderInvoicePage({ params }: PageProps) {
+export default function OrderDetailsPage(props: Props) {
   return (
-    <Suspense fallback={<div className="py-20 text-center text-xs text-neutral-400">Loading invoice document...</div>}>
-      <OrderInvoiceContent params={params} />
+    <Suspense fallback={
+      <div className="min-h-screen bg-neutral-50 p-10 flex items-center justify-center">
+        <div className="size-8 border-2 border-neutral-300 border-t-black rounded-full animate-spin" />
+      </div>
+    }>
+      <OrderDetailsContent {...props} />
     </Suspense>
   );
 }

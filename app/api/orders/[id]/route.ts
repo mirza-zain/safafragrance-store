@@ -40,3 +40,21 @@ export async function PATCH(request: Request, { params }: RouteProps) {
   }
 }
 
+export async function DELETE(request: Request, { params }: RouteProps) {
+  try {
+    const { id } = await params;
+    const store = getStore();
+    const deleted = store.deleteOrder(Number(id));
+
+    if (!deleted) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("DELETE /api/orders/[id] error:", error);
+    return NextResponse.json({ error: "Failed to delete order" }, { status: 500 });
+  }
+}
+
+

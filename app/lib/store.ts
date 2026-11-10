@@ -488,6 +488,10 @@ export function getStore() {
       };
     },
 
+    getAllProducts: () => {
+      return data.products;
+    },
+
     getProductById: (id: number) => {
       return data.products.find((p) => p.id === id) || null;
     },
@@ -590,6 +594,26 @@ export function getStore() {
       return data.orders[index];
     },
 
+    deleteOrder: (id: number) => {
+      const index = data.orders.findIndex((o) => o.id === id);
+      if (index === -1) return false;
+      const order = data.orders[index];
+      // Restore inventory
+      for (const item of order.items) {
+        const prod = data.products.find((p) => p.id === item.productId);
+        if (prod) {
+          prod.stock += item.quantity;
+          if (prod.variants && item.variantLabel) {
+            const v = prod.variants.find((vr) => vr.label === item.variantLabel);
+            if (v) v.stock += item.quantity;
+          }
+        }
+      }
+      data.orders.splice(index, 1);
+      saveStoreData(data);
+      return true;
+    },
+
     // Discounts
     getDiscounts: () => {
       return data.discounts;
@@ -608,6 +632,14 @@ export function getStore() {
       return newD;
     },
 
+    toggleDiscount: (id: number, active?: boolean) => {
+      const index = data.discounts.findIndex((d) => d.id === id);
+      if (index === -1) return null;
+      data.discounts[index].active = active !== undefined ? active : !data.discounts[index].active;
+      saveStoreData(data);
+      return data.discounts[index];
+    },
+
     deleteDiscount: (id: number) => {
       const index = data.discounts.findIndex((d) => d.id === id);
       if (index === -1) return false;
@@ -619,6 +651,30 @@ export function getStore() {
     // Delivery charges
     getDeliveryCharges: () => {
       return data.delivery;
+    },
+
+    addDeliveryCharge: (charge: Omit<DeliveryCharge, "id">) => {
+      const nextId = data.delivery.length > 0 ? Math.max(...data.delivery.map((d) => d.id)) + 1 : 1;
+      const newC: DeliveryCharge = { ...charge, id: nextId };
+      data.delivery.push(newC);
+      saveStoreData(data);
+      return newC;
+    },
+
+    toggleDeliveryCharge: (id: number, active?: boolean) => {
+      const index = data.delivery.findIndex((d) => d.id === id);
+      if (index === -1) return null;
+      data.delivery[index].active = active !== undefined ? active : !data.delivery[index].active;
+      saveStoreData(data);
+      return data.delivery[index];
+    },
+
+    deleteDeliveryCharge: (id: number) => {
+      const index = data.delivery.findIndex((d) => d.id === id);
+      if (index === -1) return false;
+      data.delivery.splice(index, 1);
+      saveStoreData(data);
+      return true;
     },
 
     calculateDelivery: (city: string, subtotal: number) => {
