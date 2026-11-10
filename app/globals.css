@@ -1,26 +1,59 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Kugile';
+  src: url('/fonts/Kugile_Demo.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Batica';
+  src: url('/fonts/BaticaSans-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Firlest';
+  src: url('/fonts/Firlest-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gebuk';
+  src: url('/fonts/Gebuk-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --color-brand: #1b4431;
+  --color-brand-dark: #0e281d;
+  --color-brand-light: #255840;
+  --color-brand-gold: #b39b66;
+  --color-brand-gold-light: #d8c38c;
+  --color-brand-gold-dark: #8c7340;
+  --color-brand-cream: #faf7f2;
+  --color-brand-sand: #f2ece2;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-batica: 'Batica', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-gebuk: 'Gebuk', Georgia, serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html {
+  scroll-behavior: smooth;
+  font-family: var(--font-batica);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+::selection {
+  background-color: #1b4431;
+  color: #d8c38c;
 }
