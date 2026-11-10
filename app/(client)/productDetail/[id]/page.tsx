@@ -3,422 +3,315 @@
 import { use, useEffect, useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import {
   ArrowLeft,
   ShoppingBag,
-  Sparkles,
-  Star,
   ShieldCheck,
   Truck,
+  Sparkles,
+  Droplets,
   Clock,
-  Award,
-  Check,
-  Plus,
-  Minus
+  Wind,
+  Calendar,
+  Layers
 } from "lucide-react";
 import { useCart } from "@/app/context/CartContext";
-import { Product, ProductVariant } from "@/app/lib/types";
 
-type PageProps = {
+type ProductVariant = {
+  label: string;
+  price: number;
+  stock: number;
+};
+
+type FragranceNotesObj = {
+  top?: string[];
+  heart?: string[];
+  base?: string[];
+};
+
+type Product = {
+  id: number;
+  name: string;
+  tagline?: string;
+  image: string | null;
+  description: string;
+  category: string;
+  olfactoryFamily?: string;
+  price: number;
+  stock: number;
+  concentration?: string;
+  sillage?: string;
+  longevity?: string;
+  season?: string;
+  notes?: string | FragranceNotesObj;
+  variants: ProductVariant[];
+};
+
+type Props = {
   params: Promise<{ id: string }>;
 };
 
-function ProductDetailContent({ params }: PageProps) {
-  const { id } = use(params);
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [added, setAdded] = useState(false);
+function ProductDetailContent({ params }: Props) {
+  const unwrappedParams = use(params);
+  const routeParams = useParams();
+  const id = unwrappedParams?.id || (routeParams?.id as string) || "";
 
-  const { addToCart } = useCart();
+  const [prodDetail, setProdDetail] = useState<Product | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const { addToCart, cart } = useCart();
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
   useEffect(() => {
-    async function loadProduct() {
+    if (!id) return;
+
+    let isMounted = true;
+    const getProd = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/productDetail/${id}`);
-        if (!res.ok) throw new Error("Fragrance not found");
-        const data: Product = await res.json();
-        setProduct(data);
-        if (data.variants && data.variants.length > 0) {
-          setSelectedVariant(data.variants[0]);
+        setError("");
+        const response = await fetch(`/api/productDetail/${encodeURIComponent(id)}`);
+        if (!response.ok) {
+          throw new Error("Fragrance not found");
+        }
+        const data = await response.json();
+        const product: Product = Array.isArray(data) ? data[0] : data;
+
+        if (isMounted) {
+          setProdDetail(product);
+          setSelectedVariant(product.variants?.[0] ?? null);
         }
       } catch (err) {
-        setError((err as Error).message);
+        if (isMounted) {
+          setError((err as Error).message || "Could not load fragrance");
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-    }
+    };
 
-    loadProduct();
+    getProd();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   if (loading) {
     return (
-      <div className="w-full min-h-[70vh] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="size-10 rounded-full border-2 border-[#1b4431] border-t-transparent animate-spin" />
-          <p className="text-xs uppercase font-bold tracking-widest text-neutral-500">Unveiling Accords...</p>
+      <main className="w-full min-h-[70vh] flex items-center justify-center py-20 px-4">
+        <div className="animate-pulse flex flex-col items-center gap-4 text-center">
+          <div className="size-16 rounded-full bg-neutral-200" />
+          <div className="h-6 w-48 rounded bg-neutral-200" />
+          <div className="h-4 w-32 rounded bg-neutral-200" />
+          <p className="text-xs text-neutral-400 font-medium mt-2">Loading artisanal fragrance details...</p>
         </div>
-      </div>
+      </main>
     );
   }
 
-  if (error || !product) {
+  if (error || !prodDetail) {
     return (
-      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center px-4 text-center">
-        <h2 className="text-2xl font-bold font-serif text-neutral-900">Fragrance Not Found</h2>
-        <p className="text-sm text-neutral-500 mt-2">The edition you are looking for may have been archived.</p>
+      <main className="w-full min-h-[70vh] flex flex-col items-center justify-center py-20 px-4 text-center">
+        <p className="text-xl font-bold text-neutral-800 font-sans">Fragrance Not Found</p>
+        <p className="text-sm text-neutral-600 mt-2 font-normal max-w-md">
+          {error || "The scent edition you requested could not be loaded from our olfactory reserve."}
+        </p>
         <Link
-          href="/shop"
-          className="mt-6 px-6 py-3 rounded-full bg-[#1b4431] text-white text-xs font-bold uppercase tracking-widest"
+          href="/product"
+          className="mt-6 px-6 py-3 bg-[#1b4431] text-white text-xs uppercase font-semibold tracking-wider rounded-lg hover:bg-[#0e281d] transition"
         >
-          Return to Catalog
+          Return to Fragrances Catalog
         </Link>
-      </div>
+      </main>
     );
   }
 
-  const activePrice = selectedVariant ? selectedVariant.price : product.price;
-  const activeStock = selectedVariant ? selectedVariant.stock : product.stock;
-
-  const handleAddToCart = () => {
-    addToCart(
-      {
-        id: product.id,
-        name: product.name,
-        description: product.tagline,
-        price: activePrice,
-        image: product.image,
-        stock: activeStock,
-        category: product.category,
-        variantLabel: selectedVariant?.label
-      },
-      selectedVariant?.label,
-      quantity
-    );
-
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-  };
+  const activePrice = selectedVariant?.price ?? Number(prodDetail.price);
+  const activeStock = selectedVariant?.stock ?? Number(prodDetail.stock);
+  const selectedQuantity =
+    cart.find(
+      (item) => item.id === prodDetail.id && item.variantLabel === selectedVariant?.label
+    )?.quantity ?? 0;
 
   return (
-    <div className="w-full py-10 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      {/* Breadcrumb Navigation */}
-      <div className="mb-8">
-        <Link
-          href="/shop"
-          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-500 hover:text-[#1b4431] transition"
-        >
-          <ArrowLeft size={14} />
-          <span>Back to All Fragrances</span>
-        </Link>
-      </div>
+    <section className="w-full min-h-[80vh] flex items-center justify-center py-10 sm:py-16 px-4 sm:px-8 lg:px-12 max-w-7xl mx-auto">
+      <div className="w-full">
+        {/* Back navigation */}
+        <div className="mb-8">
+          <Link
+            href="/product"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm text-neutral-600 hover:text-[#1b4431] uppercase tracking-wider font-semibold transition"
+          >
+            <ArrowLeft className="size-4" /> Back to Catalog
+          </Link>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-        {/* Left Column: Visual Showcase */}
-        <div className="lg:col-span-6 flex flex-col items-center">
-          <div className="relative w-full max-w-md sm:max-w-lg aspect-square rounded-3xl overflow-hidden bg-white border border-[#e5dbc7] shadow-xl p-6 flex items-center justify-center">
-            <div className="relative size-full rounded-2xl overflow-hidden bg-[#faf7f2]">
+        <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-10 lg:gap-16">
+          {/* Product Image */}
+          <div className="w-full lg:w-1/2 flex justify-center items-center sticky top-24">
+            <div className="w-full max-w-xs sm:max-w-md lg:max-w-lg aspect-square relative rounded-3xl overflow-hidden shadow-lg border-2 border-[#e7decb] bg-[#faf7f2]">
               <Image
-                src={product.image}
-                alt={product.name}
+                src={prodDetail.image || "/images/icon2.png"}
+                alt={prodDetail.name}
                 fill
+                className="object-cover"
+                sizes="(max-width: 640px) 90vw, (max-width: 1024px) 50vw, 500px"
                 priority
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover transition-transform duration-700 hover:scale-105"
               />
             </div>
-
-            {/* Badges */}
-            <div className="absolute top-8 left-8 bg-[#1b4431]/95 backdrop-blur-md text-[#d8c38c] text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md">
-              {product.concentration || "Extrait de Parfum"}
-            </div>
-
-            <div className="absolute bottom-8 right-8 bg-white/90 backdrop-blur-xs text-neutral-900 text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1.5">
-              <Sparkles size={13} className="text-[#b39b66]" />
-              <span>{product.olfactoryFamily}</span>
-            </div>
           </div>
-        </div>
 
-        {/* Right Column: Product Details & Purchase Controls */}
-        <div className="lg:col-span-6 space-y-6">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#b39b66]">
-                Safa Haute Parfumerie
+          {/* Product Details */}
+          <div className="w-full lg:w-1/2 flex flex-col items-center text-center lg:items-start lg:text-left">
+            <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-start">
+              <span className="text-xs uppercase tracking-widest text-[#b39b66] font-semibold">
+                Safa Fragrance ©
               </span>
-              <div className="flex items-center gap-1 text-xs font-semibold text-neutral-600">
-                <Star size={14} className="text-amber-500 fill-amber-500" />
-                <span>{product.rating || 5.0}</span>
-                <span className="text-neutral-400">({product.reviewCount || 34} reviews)</span>
-              </div>
+              {prodDetail.category && (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#1b4431]/10 text-[#1b4431] border border-[#1b4431]/20">
+                  {prodDetail.category}
+                </span>
+              )}
+              {prodDetail.olfactoryFamily && (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#faf7f2] text-neutral-700 border border-[#e7decb]">
+                  {prodDetail.olfactoryFamily}
+                </span>
+              )}
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-neutral-900 font-serif">
-              {product.name}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-wider mt-3 text-[#0e281d] leading-tight font-[Gebuk]">
+              {prodDetail.name}
             </h1>
 
-            <p className="text-sm sm:text-base text-neutral-600 font-light leading-relaxed">
-              {product.tagline}
-            </p>
-          </div>
-
-          {/* Price & Stock Display */}
-          <div className="py-4 border-y border-[#eee6d7] flex items-center justify-between">
-            <div>
-              <p className="text-3xl font-black text-[#1b4431] font-serif">
-                Rs. {activePrice.toLocaleString()}
+            {prodDetail.tagline && (
+              <p className="mt-2 text-sm text-[#b39b66] font-medium italic">
+                &ldquo;{prodDetail.tagline}&rdquo;
               </p>
-              <p className="text-xs text-neutral-500">Taxes included • Free delivery over Rs. 6,000</p>
+            )}
+
+            <p className="mt-4 text-sm sm:text-base text-neutral-700 leading-relaxed max-w-xl text-center lg:text-left font-normal">
+              {prodDetail.description}
+            </p>
+
+            {/* Luxury Specifications Badges */}
+            <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold justify-center lg:justify-start">
+              {prodDetail.concentration && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#e7decb] text-[#1b4431]">
+                  <Droplets className="size-3 text-[#b39b66]" /> {prodDetail.concentration}
+                </span>
+              )}
+              {prodDetail.longevity && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#e7decb] text-[#1b4431]">
+                  <Clock className="size-3 text-[#b39b66]" /> Longevity: {prodDetail.longevity}
+                </span>
+              )}
+              {prodDetail.sillage && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#e7decb] text-[#1b4431]">
+                  <Wind className="size-3 text-[#b39b66]" /> Sillage: {prodDetail.sillage}
+                </span>
+              )}
+              {prodDetail.season && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#e7decb] text-[#1b4431]">
+                  <Calendar className="size-3 text-[#b39b66]" /> {prodDetail.season}
+                </span>
+              )}
             </div>
 
-            <div className="text-right">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                <span className="size-2 rounded-full bg-emerald-600 animate-pulse" />
-                <span>{activeStock > 0 ? "In Stock • Dispatch in 24h" : "Sold Out"}</span>
-              </span>
-            </div>
-          </div>
+            {/* Price Display */}
+            <p className="mt-6 text-2xl sm:text-3xl font-bold text-[#1b4431]">
+              Rs. {activePrice.toLocaleString()}
+            </p>
 
-          {/* Size / Variant Selector */}
-          {product.variants && product.variants.length > 0 && (
-            <div className="space-y-3">
-              <label className="text-xs font-bold uppercase tracking-wider text-neutral-600">
-                Select Edition Size:
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {product.variants.map((v) => {
-                  const isSelected = selectedVariant?.label === v.label;
-                  return (
+            {/* Variant Selector */}
+            {prodDetail.variants && prodDetail.variants.length > 0 && (
+              <div className="mt-6 w-full max-w-md">
+                <p className="mb-2 text-xs uppercase font-bold tracking-wider text-[#1b4431] flex items-center gap-1.5">
+                  <Layers className="size-3.5" />
+                  <span>Choose Flacon Edition</span>
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+                  {prodDetail.variants.map((variant) => (
                     <button
-                      key={v.label}
+                      key={variant.label}
                       type="button"
-                      onClick={() => setSelectedVariant(v)}
-                      className={`p-4 rounded-2xl border text-left transition flex flex-col justify-between ${
-                        isSelected
-                          ? "border-[#1b4431] bg-[#faf7f2] shadow-xs"
-                          : "border-[#e5dbc7] bg-white hover:border-[#1b4431]"
+                      onClick={() => setSelectedVariant(variant)}
+                      className={`rounded-xl border px-4 py-2.5 text-xs sm:text-sm font-semibold uppercase tracking-wider transition active:scale-95 ${
+                        selectedVariant?.label === variant.label
+                          ? "border-[#1b4431] bg-[#1b4431] text-white shadow-xs"
+                          : "border-[#e7decb] bg-white text-neutral-700 hover:border-[#1b4431]"
                       }`}
                     >
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-sm text-neutral-900">{v.label}</span>
-                        {isSelected && <Check size={16} className="text-[#1b4431]" />}
-                      </div>
-                      <span className="text-sm font-semibold text-[#1b4431] mt-1">
-                        Rs. {v.price.toLocaleString()}
-                      </span>
+                      {variant.label} — Rs. {Number(variant.price).toLocaleString()}
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Quantity & Add to Cart Controls */}
-          <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-4">
-              {/* Stepper */}
-              <div className="flex items-center border border-[#d8cbb5] rounded-xl bg-white overflow-hidden shadow-xs">
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="p-3 text-neutral-600 hover:bg-[#faf7f2] transition"
-                  aria-label="Decrease quantity"
-                >
-                  <Minus size={14} />
-                </button>
-                <span className="px-4 text-sm font-bold text-neutral-900 min-w-8 text-center">
-                  {quantity}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => Math.min(activeStock, q + 1))}
-                  className="p-3 text-neutral-600 hover:bg-[#faf7f2] transition"
-                  aria-label="Increase quantity"
-                >
-                  <Plus size={14} />
-                </button>
-              </div>
-
-              {/* Add to Bag Button */}
+            {/* Action Button */}
+            <div className="w-full max-w-md flex flex-col sm:flex-row items-center gap-4 mt-8">
               <button
-                type="button"
                 disabled={activeStock <= 0}
-                onClick={handleAddToCart}
-                className={`flex-1 py-4 px-8 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition active:scale-[0.98] ${
-                  added
-                    ? "bg-emerald-700 text-white"
-                    : "bg-[#1b4431] hover:bg-[#123023] text-white"
+                onClick={() =>
+                  addToCart({
+                    id: prodDetail.id,
+                    name: prodDetail.name,
+                    description: prodDetail.description,
+                    category: prodDetail.category,
+                    image: prodDetail.image || "/images/icon2.png",
+                    price: activePrice,
+                    stock: activeStock,
+                    variantLabel: selectedVariant?.label,
+                  })
+                }
+                aria-label={
+                  selectedQuantity > 0
+                    ? `${selectedQuantity} selected, add another ${prodDetail.name}`
+                    : `Add ${prodDetail.name} to cart`
+                }
+                className={`w-full py-4 px-6 text-sm sm:text-base font-semibold uppercase tracking-wider rounded-xl border-2 transition-all duration-150 active:scale-[0.98] flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1b4431] disabled:cursor-not-allowed disabled:opacity-50 ${
+                  selectedQuantity > 0
+                    ? "border-[#1b4431] bg-[#1b4431] text-white hover:bg-[#0e281d]"
+                    : "border-[#1b4431] bg-transparent text-[#1b4431] hover:bg-[#1b4431] hover:text-white"
                 }`}
               >
-                {added ? (
-                  <>
-                    <Check size={18} />
-                    <span>Added To Fragrance Bag</span>
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag size={18} />
-                    <span>Add To Fragrance Bag • Rs. {(activePrice * quantity).toLocaleString()}</span>
-                  </>
-                )}
+                <ShoppingBag className="size-5" />
+                {activeStock > 0
+                  ? selectedQuantity > 0
+                    ? `Added to Bag (${selectedQuantity})`
+                    : "Add to Bag"
+                  : "Out of Stock"}
               </button>
             </div>
-          </div>
 
-          {/* Guarantees */}
-          <div className="grid grid-cols-2 gap-3 pt-4 border-t border-[#eee6d7] text-xs text-neutral-600">
-            <div className="flex items-center gap-2 bg-white p-3 rounded-xl border border-[#e5dbc7]">
-              <Truck size={16} className="text-[#1b4431] shrink-0" />
-              <span>Complimentary Express Shipping over Rs. 6,000</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white p-3 rounded-xl border border-[#e5dbc7]">
-              <ShieldCheck size={16} className="text-[#1b4431] shrink-0" />
-              <span>100% Extrait de Parfum Authenticity Sealed</span>
+            {/* Trust Badges */}
+            <div className="mt-8 pt-6 border-t border-[#e7decb] flex flex-wrap gap-5 text-xs text-neutral-600 font-medium justify-center lg:justify-start">
+              <span className="flex items-center gap-1.5">
+                <Truck className="size-4 text-[#1b4431]" /> Express Delivery Across Pakistan
+              </span>
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="size-4 text-[#1b4431]" /> 100% Authentic Extrait
+              </span>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Olfactory Scent Pyramid Breakdown */}
-      <section className="mt-20 pt-16 border-t border-[#eee6d7]">
-        <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#b39b66]">Olfactory Architecture</p>
-          <h2 className="text-3xl font-black uppercase tracking-tight text-neutral-900 font-serif">
-            The Scent Pyramid
-          </h2>
-          <p className="text-sm text-neutral-600 font-light">
-            Formulated to evolve over 14 hours as body warmth releases deeper layers of rare concentrates.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Top Notes */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#e5dbc7] shadow-xs space-y-4">
-            <div className="size-10 rounded-2xl bg-[#faf7f2] border border-[#e5dbc7] flex items-center justify-center text-[#b39b66] font-bold text-xs">
-              01
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#b39b66]">
-                First 30 Minutes
-              </span>
-              <h3 className="text-xl font-bold uppercase text-neutral-900 font-serif">Top Notes</h3>
-            </div>
-            <p className="text-xs text-neutral-500 leading-relaxed">
-              The opening greeting. Vibrant, luminous accords engineered to make an instant impression.
-            </p>
-            <div className="flex flex-wrap gap-2 pt-2">
-              {product.notes?.top.map((note) => (
-                <span
-                  key={note}
-                  className="px-3 py-1 rounded-lg bg-[#faf7f2] border border-[#eee6d7] text-xs font-semibold text-neutral-800"
-                >
-                  {note}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Heart Notes */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#1b4431] shadow-md space-y-4 relative">
-            <div className="absolute top-4 right-4 bg-[#1b4431] text-white text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full">
-              Heart Core
-            </div>
-            <div className="size-10 rounded-2xl bg-[#1b4431] text-[#d8c38c] flex items-center justify-center font-bold text-xs">
-              02
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#b39b66]">
-                Hours 1 to 6
-              </span>
-              <h3 className="text-xl font-bold uppercase text-neutral-900 font-serif">Heart Notes</h3>
-            </div>
-            <p className="text-xs text-neutral-500 leading-relaxed">
-              The soul of the fragrance. Rich floral, spice, and aromatic absolutes providing character.
-            </p>
-            <div className="flex flex-wrap gap-2 pt-2">
-              {product.notes?.heart.map((note) => (
-                <span
-                  key={note}
-                  className="px-3 py-1 rounded-lg bg-[#faf7f2] border border-[#eee6d7] text-xs font-semibold text-neutral-800"
-                >
-                  {note}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Base Notes */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#e5dbc7] shadow-xs space-y-4">
-            <div className="size-10 rounded-2xl bg-[#faf7f2] border border-[#e5dbc7] flex items-center justify-center text-[#b39b66] font-bold text-xs">
-              03
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#b39b66]">
-                Hours 6 to 16+
-              </span>
-              <h3 className="text-xl font-bold uppercase text-neutral-900 font-serif">Base Notes</h3>
-            </div>
-            <p className="text-xs text-neutral-500 leading-relaxed">
-              The lingering signature. Heavy resins, aged agarwood, and amber that anchor to skin and clothing.
-            </p>
-            <div className="flex flex-wrap gap-2 pt-2">
-              {product.notes?.base.map((note) => (
-                <span
-                  key={note}
-                  className="px-3 py-1 rounded-lg bg-[#faf7f2] border border-[#eee6d7] text-xs font-semibold text-neutral-800"
-                >
-                  {note}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Sillage & Technical Specs */}
-      <section className="mt-16 bg-[#faf7f2] rounded-3xl border border-[#e5dbc7] p-8 sm:p-12">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-          <div className="space-y-1">
-            <Award className="size-6 text-[#b39b66] mx-auto" />
-            <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">Concentration</p>
-            <p className="text-sm font-bold text-neutral-900">{product.concentration}</p>
-          </div>
-          <div className="space-y-1">
-            <Clock className="size-6 text-[#b39b66] mx-auto" />
-            <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">Longevity</p>
-            <p className="text-sm font-bold text-neutral-900">{product.longevity}</p>
-          </div>
-          <div className="space-y-1">
-            <Sparkles className="size-6 text-[#b39b66] mx-auto" />
-            <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">Sillage</p>
-            <p className="text-sm font-bold text-neutral-900">{product.sillage}</p>
-          </div>
-          <div className="space-y-1">
-            <ShieldCheck className="size-6 text-[#b39b66] mx-auto" />
-            <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">Suitability</p>
-            <p className="text-sm font-bold text-neutral-900">{product.season}</p>
-          </div>
-        </div>
-      </section>
-    </div>
+    </section>
   );
 }
 
-export default function ProductDetailPage({ params }: PageProps) {
+export default function ProductDetailPage({ params }: Props) {
   return (
     <Suspense
       fallback={
         <div className="w-full min-h-[70vh] flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="size-10 rounded-full border-2 border-[#1b4431] border-t-transparent animate-spin" />
-            <p className="text-xs uppercase font-bold tracking-widest text-neutral-500">
-              Unveiling Accords...
-            </p>
+          <div className="animate-pulse flex flex-col items-center gap-3">
+            <div className="size-10 rounded-full bg-neutral-200" />
+            <div className="h-4 w-32 rounded bg-neutral-200" />
           </div>
         </div>
       }

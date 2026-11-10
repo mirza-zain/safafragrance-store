@@ -454,10 +454,11 @@ export function getStore() {
           (p) =>
             p.name.toLowerCase().includes(query) ||
             p.description.toLowerCase().includes(query) ||
-            p.tagline.toLowerCase().includes(query) ||
-            p.notes.top.some((n) => n.toLowerCase().includes(query)) ||
-            p.notes.heart.some((n) => n.toLowerCase().includes(query)) ||
-            p.notes.base.some((n) => n.toLowerCase().includes(query))
+            (p.tagline && p.tagline.toLowerCase().includes(query)) ||
+            (Array.isArray(p.notes?.top) && p.notes.top.some((n) => n.toLowerCase().includes(query))) ||
+            (Array.isArray(p.notes?.heart) && p.notes.heart.some((n) => n.toLowerCase().includes(query))) ||
+            (Array.isArray(p.notes?.base) && p.notes.base.some((n) => n.toLowerCase().includes(query))) ||
+            (typeof p.notes === "string" && (p.notes as unknown as string).toLowerCase().includes(query))
         );
       }
 
@@ -492,8 +493,22 @@ export function getStore() {
       return data.products;
     },
 
-    getProductById: (id: number) => {
-      return data.products.find((p) => p.id === id) || null;
+    getProductById: (idOrSlug: number | string) => {
+      const numId = Number(idOrSlug);
+      if (!Number.isNaN(numId) && numId > 0) {
+        const found = data.products.find((p) => p.id === numId);
+        if (found) return found;
+      }
+      const query = String(idOrSlug).toLowerCase().trim();
+      return (
+        data.products.find(
+          (p) =>
+            String(p.id) === query ||
+            p.name.toLowerCase() === query ||
+            p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === query ||
+            (p.tagline && p.tagline.toLowerCase().includes(query))
+        ) || null
+      );
     },
 
     getFeaturedProducts: () => {

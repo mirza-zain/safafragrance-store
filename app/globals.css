@@ -44,13 +44,36 @@
 }
 
 :root {
-  --font-batica: 'Batica', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-gebuk: 'Gebuk', Georgia, serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', Didot, 'Playfair Display', serif;
+  --font-gebuk: 'Gebuk', Georgia, "Times New Roman", serif;
+  --font-batica: 'Batica', var(--font-sans);
+}
+
+.font-\[Gebuk\], .font-gebuk {
+  font-family: 'Gebuk', Georgia, "Times New Roman", serif;
+  letter-spacing: 0.04em;
+  font-synthesis: none;
+}
+
+.font-\[Batica\], .font-batica {
+  font-family: 'Batica', var(--font-sans);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
 }
 
 html {
   scroll-behavior: smooth;
-  font-family: var(--font-batica);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {

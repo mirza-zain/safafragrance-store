@@ -28,10 +28,10 @@ export default function FloatingWhatsApp() {
           </div>
 
           <div className="space-y-1">
-            <h4 className="font-bold text-sm text-neutral-900 font-serif">
+            <h4 className="font-bold text-sm text-neutral-900 font-sans tracking-wide">
               Seeking Personal Scent Guidance?
             </h4>
-            <p className="text-xs text-neutral-600 font-light leading-relaxed">
+            <p className="text-xs text-neutral-600 font-normal leading-relaxed">
               Our master perfumer team is available on WhatsApp to guide your choice of notes, longevity, or custom decants.
             </p>
           </div>
@@ -40,7 +40,7 @@ export default function FloatingWhatsApp() {
             href="https://wa.me/923001234567?text=Hello%20Safa%20Fragrance,%20I%20would%20like%20guidance%20on%20choosing%20a%20signature%20scent."
             target="_blank"
             rel="noreferrer"
-            className="w-full py-3 rounded-xl bg-[#1b4431] hover:bg-[#123023] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-md"
+            className="w-full py-3 rounded-xl bg-[#1b4431] hover:bg-[#0e281d] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-md border border-[#255840]"
           >
             <MessageSquare size={14} />
             <span>Start WhatsApp Chat</span>
@@ -51,7 +51,7 @@ export default function FloatingWhatsApp() {
       {/* Floating Pill Trigger */}
       <button
         onClick={() => setOpen(!open)}
-        className="group flex items-center gap-2.5 px-4 py-3 rounded-full bg-[#1b4431] hover:bg-[#123023] text-white shadow-xl border border-[#255840] transition-all hover:scale-105 active:scale-95"
+        className="group flex items-center gap-2.5 px-4 py-3 rounded-full bg-[#1b4431] hover:bg-[#0e281d] text-white shadow-xl border border-[#255840] transition-all hover:scale-105 active:scale-95"
         aria-label="Open Concierge Chat"
       >
         <span className="relative flex size-2.5">

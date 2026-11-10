@@ -26,6 +26,7 @@ type CartContextValue = {
   setIsCartOpen: (open: boolean) => void;
   totalItems: number;
   subtotal: number;
+  hasHydrated: boolean;
 };
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
@@ -129,7 +130,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         isCartOpen,
         setIsCartOpen,
         totalItems,
-        subtotal
+        subtotal,
+        hasHydrated
       }}
     >
       {children}

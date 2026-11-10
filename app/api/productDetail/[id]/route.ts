@@ -9,7 +9,7 @@ export async function GET(request: Request, { params }: RouteProps) {
   try {
     const { id } = await params;
     const store = getStore();
-    const product = store.getProductById(Number(id));
+    const product = store.getProductById(id);
 
     if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });

@@ -3,6 +3,7 @@
 import { use, useEffect, useState, Suspense } from "react";
 import Form, { AdminProduct } from "../../(component)/Form";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 type Props = {
@@ -12,27 +13,43 @@ type Props = {
 };
 
 function EditProductContent({ params }: Props) {
-  const { id } = use(params);
+  const unwrappedParams = use(params);
+  const routeParams = useParams();
+  const id = unwrappedParams?.id || (routeParams?.id as string) || "";
+
   const [product, setProduct] = useState<AdminProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!id) return;
+
+    let isMounted = true;
     async function loadProduct() {
       try {
         setLoading(true);
-        const res = await fetch(`/api/productDetail/${id}`);
+        const res = await fetch(`/api/productDetail/${encodeURIComponent(id)}`);
         if (!res.ok) throw new Error("Product not found");
         const json = await res.json();
-        setProduct(json);
+        if (isMounted) {
+          setProduct(json);
+        }
       } catch (err) {
-        setError((err as Error).message);
+        if (isMounted) {
+          setError((err as Error).message);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
     loadProduct();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   if (loading) {

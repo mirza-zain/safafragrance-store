@@ -1,203 +1,109 @@
-'use client';
+import { Mail, Phone } from "lucide-react";
 
-import { useState } from "react";
-import { Mail, Phone, MapPin, Clock, Send, Sparkles, CheckCircle2, MessageSquare } from "lucide-react";
+const contactDetails = [
+  {
+    label: "Email",
+    value: "concierge@safafragrance.com",
+    href: "mailto:concierge@safafragrance.com",
+    icon: Mail,
+  },
+  {
+    label: "WhatsApp & Phone",
+    value: "+92 300 1234567",
+    href: "https://wa.me/923001234567",
+    icon: Phone,
+  },
+];
+
+const socialLinks = [
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com",
+    icon: () => (
+      <svg className="size-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.79-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+      </svg>
+    ),
+  },
+  {
+    label: "TikTok",
+    href: "https://www.tiktok.com",
+    icon: () => (
+      <svg className="size-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.48 6.27 6.27 0 0 0 1.96-4.52V8.97a8.27 8.27 0 0 0 4.81 1.54V7.07c-.33 0-.67-.12-1-.38z" />
+      </svg>
+    ),
+  },
+];
 
 export default function ContactPage() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    subject: "Order Inquiry",
-    message: ""
-  });
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
-  };
-
   return (
-    <main className="w-full min-h-screen py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="max-w-3xl mb-16 space-y-3">
-        <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#b39b66]">
-          Safa Fragrance Concierge
-        </span>
-        <h1 className="text-4xl sm:text-6xl font-black uppercase text-neutral-900 font-serif leading-[1.05]">
-          Speak With Our <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1b4431] to-[#b39b66]">
-            Olfactory Concierge
-          </span>
-        </h1>
-        <p className="text-sm sm:text-base text-neutral-600 font-light leading-relaxed pt-2">
-          Whether you desire tailored scent guidance, have inquiries about an active parcel, or wish to schedule a private decant consultation in Karachi.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-        {/* Left Column: Direct Contact Info */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-            <div className="bg-white rounded-3xl p-6 border border-[#e5dbc7] shadow-xs space-y-3">
-              <div className="size-10 rounded-2xl bg-[#faf7f2] border border-[#e5dbc7] flex items-center justify-center text-[#1b4431]">
-                <Mail size={18} />
-              </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">Direct Inquiries</p>
-                <p className="text-base font-bold text-neutral-900 font-serif">concierge@safafragrance.com</p>
-                <p className="text-xs text-neutral-500 mt-0.5">Average reply time within 3 hours</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-6 border border-[#e5dbc7] shadow-xs space-y-3">
-              <div className="size-10 rounded-2xl bg-[#faf7f2] border border-[#e5dbc7] flex items-center justify-center text-[#1b4431]">
-                <Phone size={18} />
-              </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">Direct Helpline & WhatsApp</p>
-                <p className="text-base font-bold text-neutral-900 font-serif">+92 300 1234567</p>
-                <p className="text-xs text-neutral-500 mt-0.5">Mon–Sat • 10:00 AM – 9:00 PM PKT</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-6 border border-[#e5dbc7] shadow-xs space-y-3">
-              <div className="size-10 rounded-2xl bg-[#faf7f2] border border-[#e5dbc7] flex items-center justify-center text-[#1b4431]">
-                <MapPin size={18} />
-              </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">Karachi Studio & Showroom</p>
-                <p className="text-base font-bold text-neutral-900 font-serif">Phase 6, DHA, Karachi</p>
-                <p className="text-xs text-neutral-500 mt-0.5">Private olfactory consultations by appointment</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick WhatsApp Action */}
-          <div className="p-6 rounded-3xl bg-[#1b4431] text-[#f2ece2] space-y-3 shadow-xl">
-            <h3 className="text-lg font-bold font-serif text-[#d8c38c]">Instant WhatsApp Support</h3>
-            <p className="text-xs text-neutral-300 leading-relaxed font-light">
-              Need immediate advice on longevity, note comparisons, or bank transfer verification?
-            </p>
-            <a
-              href="https://wa.me/923001234567"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#b39b66] hover:bg-[#d8c38c] text-[#0f271c] font-bold text-xs uppercase tracking-widest transition shadow-md"
-            >
-              <MessageSquare size={16} />
-              <span>Open WhatsApp Chat</span>
-            </a>
-          </div>
+    <main className="w-full flex-1">
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-16 sm:py-24 lg:py-32">
+        <div className="max-w-3xl">
+          <p className="text-xs sm:text-sm uppercase tracking-[0.28em] text-[#b39b66] font-semibold">
+            Safa Fragrance Support
+          </p>
+          <h1 className="mt-4 text-4xl sm:text-6xl lg:text-7xl font-bold tracking-wider leading-[1.08] text-[#0e281d] font-[Gebuk] uppercase">
+            Contact Us
+          </h1>
+          <p className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-neutral-700 font-normal">
+            Have a question about your order, custom scent recommendation, or private reserve bottles? We&apos;re happy to help.
+          </p>
         </div>
 
-        {/* Right Column: Contact Form */}
-        <div className="lg:col-span-7 bg-white rounded-3xl p-8 sm:p-12 border border-[#e5dbc7] shadow-md space-y-6">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold uppercase font-serif text-neutral-900">
-              Send An Inquiry
-            </h2>
-            <p className="text-xs text-neutral-500">
-              Our master concierge reviews every transmission personally.
-            </p>
+        <div className="mt-14 sm:mt-20 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 border-t border-[#e7decb] pt-10 sm:pt-14">
+          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+            {contactDetails.map(({ label, value, href, icon: Icon }) => (
+              <a
+                key={label}
+                href={href}
+                className="group flex min-h-[190px] flex-col justify-between rounded-2xl border border-[#e7decb] bg-white/70 p-6 sm:p-7 transition-all duration-200 hover:-translate-y-1 hover:border-[#1b4431] hover:bg-white active:scale-[0.98]"
+              >
+                <Icon className="size-8 text-[#1b4431] transition-transform duration-200 group-hover:scale-110" />
+                <span>
+                  <span className="block text-xs uppercase tracking-[0.2em] text-[#b39b66] font-semibold">
+                    {label}
+                  </span>
+                  <span className="mt-2 block break-all text-base sm:text-lg font-bold text-neutral-900 font-sans tracking-wide">
+                    {value}
+                  </span>
+                </span>
+              </a>
+            ))}
           </div>
 
-          {submitted ? (
-            <div className="p-8 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-3">
-              <CheckCircle2 size={36} className="text-emerald-700 mx-auto" />
-              <h3 className="text-xl font-bold font-serif text-emerald-900">Inquiry Received</h3>
-              <p className="text-xs text-emerald-700 max-w-sm mx-auto">
-                Thank you, {form.name}. A representative from our Karachi concierge team will contact you shortly via email or phone.
+          <div className="lg:col-span-5 flex flex-col justify-between border-l-0 border-[#e7decb] lg:border-l lg:pl-12">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-[#b39b66] font-semibold">
+                Follow Us
+              </p>
+              <p className="mt-3 max-w-sm text-2xl sm:text-3xl font-bold uppercase text-[#0e281d] font-[Gebuk] leading-tight tracking-wider">
+                Stay close to the world of Safa Fragrance.
+              </p>
+              <p className="mt-3 text-xs sm:text-sm text-neutral-600 font-normal leading-relaxed">
+                Receive private reserve announcements, olfactory notes, and private launch invites.
               </p>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1">
-                    Your Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="e.g. Zubair Ahmed"
-                    className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="zubair@example.com"
-                    className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431]"
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1">
-                    Phone / WhatsApp Number
-                  </label>
-                  <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    placeholder="+92 300 1234567"
-                    className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1">
-                    Nature of Inquiry
-                  </label>
-                  <select
-                    value={form.subject}
-                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431]"
-                  >
-                    <option value="Order Inquiry">Active Order Inquiry</option>
-                    <option value="Scent Guidance">Personal Scent Guidance</option>
-                    <option value="Bank Verification">Payment Proof Verification</option>
-                    <option value="Wholesale">Wholesale & Corporate Gifting</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1">
-                  Message *
-                </label>
-                <textarea
-                  required
-                  rows={4}
-                  value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  placeholder="Tell us how we may assist you..."
-                  className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431]"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-4 rounded-xl bg-[#1b4431] hover:bg-[#123023] text-white font-bold text-xs uppercase tracking-widest transition shadow-lg active:scale-[0.98] flex items-center justify-center gap-2"
-              >
-                <Send size={15} />
-                <span>Send Message to Concierge</span>
-              </button>
-            </form>
-          )}
+            <div className="mt-8 flex flex-wrap gap-3">
+              {socialLinks.map(({ label, icon: Icon, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={label}
+                  className="inline-flex items-center gap-2 rounded-full border border-[#e7decb] bg-white px-5 py-3 text-xs sm:text-sm font-semibold uppercase tracking-wider text-neutral-800 transition-colors hover:border-[#1b4431] hover:bg-[#1b4431] hover:text-white active:scale-[0.97]"
+                >
+                  <Icon />
+                  <span>{label}</span>
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
     </main>
   );
 }
-

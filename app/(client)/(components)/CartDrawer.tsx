@@ -163,15 +163,15 @@ export default function CartDrawer() {
               </div>
 
               <div className="pt-2 border-t border-neutral-100 flex justify-between items-baseline">
-                <span className="font-bold text-neutral-900 font-serif text-lg">Total</span>
-                <span className="text-xl font-black text-[#1b4431]">Rs. {subtotal.toLocaleString()}</span>
+                <span className="font-bold text-neutral-900 font-sans uppercase tracking-wider text-sm">Total</span>
+                <span className="text-xl font-black text-neutral-900">Rs. {subtotal.toLocaleString()}</span>
               </div>
 
               <div className="flex flex-col gap-2 pt-1">
                 <Link
-                  href={`/payment?id=${cart[0]?.id}`}
+                  href="/payment"
                   onClick={() => setIsCartOpen(false)}
-                  className="w-full py-4 rounded-xl bg-[#1b4431] hover:bg-[#123023] text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition active:scale-[0.98]"
+                  className="w-full py-4 rounded-xl bg-[#1b4431] hover:bg-[#0e281d] text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition active:scale-[0.98] border border-[#255840]"
                 >
                   <span>Proceed to Checkout</span>
                   <ArrowRight size={16} />

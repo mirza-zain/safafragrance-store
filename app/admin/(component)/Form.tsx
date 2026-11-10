@@ -44,10 +44,7 @@ export default function Form({ product, onProductSaved }: FormProps) {
     variants: product?.variants ?? [
       { label: "50ml Extrait", price: product?.price ?? 4500, stock: 20 },
       { label: "100ml Extrait", price: Math.round((product?.price ?? 4500) * 1.6), stock: 10 }
-    ],
-    topNotes: product?.notes?.top ? product.notes.top.join(", ") : "Bergamot, Saffron",
-    heartNotes: product?.notes?.heart ? product.notes.heart.join(", ") : "Taif Rose, Jasmine",
-    baseNotes: product?.notes?.base ? product.notes.base.join(", ") : "Oud, Amber, Sandalwood"
+    ]
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,11 +123,7 @@ export default function Form({ product, onProductSaved }: FormProps) {
       sillage: "Commanding",
       longevity: "14+ Hours",
       season: "All Seasons",
-      notes: {
-        top: formData.topNotes.split(",").map(s => s.trim()).filter(Boolean),
-        heart: formData.heartNotes.split(",").map(s => s.trim()).filter(Boolean),
-        base: formData.baseNotes.split(",").map(s => s.trim()).filter(Boolean)
-      },
+      ...(product?.notes ? { notes: product.notes } : {}),
       variants: formData.variants.map(v => ({
         label: v.label,
         price: Number(v.price),
@@ -174,10 +167,7 @@ export default function Form({ product, onProductSaved }: FormProps) {
           variants: [
             { label: "50ml Extrait", price: 4500, stock: 20 },
             { label: "100ml Extrait", price: 7200, stock: 10 }
-          ],
-          topNotes: "Bergamot, Saffron",
-          heartNotes: "Taif Rose, Jasmine",
-          baseNotes: "Oud, Amber, Sandalwood"
+          ]
         });
       }
 
@@ -293,53 +283,10 @@ export default function Form({ product, onProductSaved }: FormProps) {
             name="description"
             id="prodDes"
             rows={3}
-            placeholder="Describe scent notes, projection, and olfactory mood..."
+            placeholder="Describe fragrance composition, projection, and mood..."
             value={formData.description}
             onChange={handleData}
           />
-        </div>
-
-        {/* Fragrance Notes */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1">
-              Top Notes
-            </label>
-            <input
-              type="text"
-              name="topNotes"
-              value={formData.topNotes}
-              onChange={handleData}
-              placeholder="e.g. Bergamot, Saffron"
-              className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-black"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1">
-              Heart Notes
-            </label>
-            <input
-              type="text"
-              name="heartNotes"
-              value={formData.heartNotes}
-              onChange={handleData}
-              placeholder="e.g. Taif Rose, Jasmine"
-              className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-black"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1">
-              Base Notes
-            </label>
-            <input
-              type="text"
-              name="baseNotes"
-              value={formData.baseNotes}
-              onChange={handleData}
-              placeholder="e.g. Oud, Amber, Vanilla"
-              className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-black"
-            />
-          </div>
         </div>
 
         {/* Size Variations */}

@@ -6,6 +6,7 @@ import PaymentVerificationCard from "./PaymentVerificationCard";
 import InvoicePrintButton from "./InvoicePrintButton";
 import { Order } from "@/app/lib/types";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 type Props = {
@@ -23,27 +24,43 @@ const statusClasses: Record<string, string> = {
 };
 
 function OrderDetailsContent({ params }: Props) {
-  const { id } = use(params);
+  const unwrappedParams = use(params);
+  const routeParams = useParams();
+  const id = unwrappedParams?.id || (routeParams?.id as string) || "";
+
   const [data, setData] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!id) return;
+
+    let isMounted = true;
     async function loadOrder() {
       try {
         setLoading(true);
-        const res = await fetch(`/api/orders/${id}`);
+        const res = await fetch(`/api/orders/${encodeURIComponent(id)}`);
         if (!res.ok) throw new Error("Order not found");
         const json = await res.json();
-        setData(json);
+        if (isMounted) {
+          setData(json);
+        }
       } catch (err) {
-        setError((err as Error).message);
+        if (isMounted) {
+          setError((err as Error).message);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
     loadOrder();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   if (loading) {

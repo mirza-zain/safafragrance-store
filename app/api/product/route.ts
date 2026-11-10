@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       sillage: body.sillage || "Commanding",
       longevity: body.longevity || "14+ Hours",
       season: body.season || "All Seasons",
-      notes: body.notes || { top: ["Bergamot"], heart: ["Rose"], base: ["Oud"] },
+      notes: body.notes || { top: [], heart: [], base: [] },
       variants: Array.isArray(body.variants) && body.variants.length > 0 ? body.variants : [
         { label: "50ml Extrait", price: Number(body.price), stock: Number(body.stock || 20) }
       ],

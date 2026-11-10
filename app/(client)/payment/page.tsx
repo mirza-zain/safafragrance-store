@@ -22,7 +22,7 @@ import {
 type PaymentMethod = "cod" | "bank_transfer";
 
 export default function PaymentPage() {
-  const { cart, clearCart } = useCart();
+  const { cart, clearCart, hasHydrated } = useCart();
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [createdOrder, setCreatedOrder] = useState<any>(null);
   const [discountCode, setDiscountCode] = useState("");
@@ -178,10 +178,10 @@ export default function PaymentPage() {
             <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#b39b66]">
               Order Confirmed & Sealed
             </span>
-            <h1 className="text-3xl sm:text-4xl font-black uppercase text-neutral-900 font-serif">
+            <h1 className="text-3xl sm:text-4xl font-bold uppercase text-neutral-900 font-[Gebuk] tracking-wider">
               Thank You, {createdOrder.firstName}!
             </h1>
-            <p className="text-sm text-neutral-600 font-light max-w-lg mx-auto">
+            <p className="text-sm text-neutral-700 font-normal max-w-lg mx-auto">
               Your luxury Extrait de Parfum order has been recorded. Our master bottling concierge will prepare and package your parcel under hermetic seal.
             </p>
           </div>
@@ -259,6 +259,15 @@ export default function PaymentPage() {
     );
   }
 
+  if (!hasHydrated) {
+    return (
+      <main className="w-full min-h-[70vh] flex flex-col items-center justify-center p-8 text-center">
+        <div className="animate-pulse size-12 rounded-full bg-neutral-200 mb-3" />
+        <div className="animate-pulse h-4 w-32 rounded bg-neutral-200" />
+      </main>
+    );
+  }
+
   // If cart is empty and no order submitted
   if (cart.length === 0) {
     return (
@@ -266,7 +275,7 @@ export default function PaymentPage() {
         <h2 className="text-2xl font-bold font-serif">No Items to Checkout</h2>
         <p className="text-sm text-neutral-500 mt-2">Add items to your fragrance bag before proceeding.</p>
         <Link
-          href="/shop"
+          href="/product"
           className="mt-6 px-6 py-3 rounded-full bg-[#1b4431] text-white text-xs font-bold uppercase tracking-widest"
         >
           Explore Collection
@@ -281,7 +290,7 @@ export default function PaymentPage() {
         <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#b39b66]">
           Secure Haute Parfumerie Checkout
         </span>
-        <h1 className="text-3xl sm:text-4xl font-black uppercase text-neutral-900 font-serif mt-1">
+        <h1 className="text-3xl sm:text-4xl font-bold uppercase text-neutral-900 font-[Gebuk] mt-1 tracking-wider">
           Complete Your Order
         </h1>
       </div>
@@ -292,8 +301,8 @@ export default function PaymentPage() {
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* 1. Contact & Recipient */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#e5dbc7] shadow-xs space-y-5">
-              <h2 className="text-lg font-bold uppercase font-serif text-neutral-900 flex items-center gap-2">
-                <span className="size-6 rounded-full bg-[#1b4431] text-white text-xs flex items-center justify-center">
+              <h2 className="text-lg font-bold uppercase tracking-wider font-[Gebuk] text-[#0e281d] flex items-center gap-2">
+                <span className="size-6 rounded-full bg-[#1b4431] text-white text-xs flex items-center justify-center font-sans">
                   1
                 </span>
                 <span>Contact & Recipient Details</span>
@@ -370,8 +379,8 @@ export default function PaymentPage() {
 
             {/* 2. Delivery Address */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#e5dbc7] shadow-xs space-y-5">
-              <h2 className="text-lg font-bold uppercase font-serif text-neutral-900 flex items-center gap-2">
-                <span className="size-6 rounded-full bg-[#1b4431] text-white text-xs flex items-center justify-center">
+              <h2 className="text-lg font-bold uppercase tracking-wider font-[Gebuk] text-[#0e281d] flex items-center gap-2">
+                <span className="size-6 rounded-full bg-[#1b4431] text-white text-xs flex items-center justify-center font-sans">
                   2
                 </span>
                 <span>Delivery Address</span>
@@ -431,8 +440,8 @@ export default function PaymentPage() {
 
             {/* 3. Payment Method */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#e5dbc7] shadow-xs space-y-6">
-              <h2 className="text-lg font-bold uppercase font-serif text-neutral-900 flex items-center gap-2">
-                <span className="size-6 rounded-full bg-[#1b4431] text-white text-xs flex items-center justify-center">
+              <h2 className="text-lg font-bold uppercase tracking-wider font-[Gebuk] text-[#0e281d] flex items-center gap-2">
+                <span className="size-6 rounded-full bg-[#1b4431] text-white text-xs flex items-center justify-center font-sans">
                   3
                 </span>
                 <span>Payment Method</span>
@@ -608,7 +617,7 @@ export default function PaymentPage() {
             <button
               type="submit"
               disabled={submitting || uploadingReceipt}
-              className="w-full py-5 rounded-2xl bg-[#1b4431] hover:bg-[#123023] text-white font-bold text-xs uppercase tracking-widest shadow-xl transition active:scale-[0.98] disabled:opacity-50"
+              className="w-full py-5 rounded-2xl bg-[#1b4431] hover:bg-[#0e281d] text-white font-bold text-xs uppercase tracking-widest shadow-xl transition active:scale-[0.98] disabled:opacity-50 border border-[#255840]"
             >
               {submitting
                 ? "Securing Your Order..."
@@ -621,7 +630,7 @@ export default function PaymentPage() {
 
         {/* Right Sidebar: Order Summary */}
         <div className="lg:col-span-5 bg-white p-6 sm:p-8 rounded-3xl border border-[#e5dbc7] shadow-md sticky top-24 space-y-6">
-          <h2 className="text-xl font-bold tracking-tight text-neutral-900 pb-4 border-b border-[#eee6d7] font-serif">
+          <h2 className="text-xl font-bold uppercase tracking-wider text-[#0e281d] pb-4 border-b border-[#eee6d7] font-[Gebuk]">
             Bag Review ({cart.reduce((a, b) => a + b.quantity, 0)})
           </h2>
 
@@ -691,8 +700,8 @@ export default function PaymentPage() {
 
           {/* Grand total */}
           <div className="pt-4 border-t border-[#eee6d7] flex justify-between items-baseline">
-            <span className="text-base font-bold text-neutral-900 font-serif">Total Payable</span>
-            <span className="text-2xl font-black text-[#1b4431]">
+            <span className="text-sm font-bold text-neutral-900 font-sans uppercase tracking-wider">Total Payable</span>
+            <span className="text-2xl font-black text-neutral-900">
               Rs. {grandTotal.toLocaleString()}
             </span>
           </div>

@@ -118,7 +118,7 @@ function TrackContent() {
           <button
             type="submit"
             disabled={loading}
-            className="px-8 py-3 rounded-xl bg-[#1b4431] hover:bg-[#123023] text-white font-bold text-xs uppercase tracking-widest transition shadow-md disabled:opacity-50"
+            className="px-8 py-3 rounded-xl bg-[#1b4431] hover:bg-[#0e281d] text-white font-bold text-xs uppercase tracking-widest transition shadow-md border border-[#255840] disabled:opacity-50"
           >
             {loading ? "Searching..." : "Track Parcel"}
           </button>
@@ -294,7 +294,7 @@ function TrackContent() {
               href={`https://wa.me/923001234567?text=Hello%20Safa%20Fragrance,%20query%20for%20order%20${order.trackingId}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1b4431] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#123023] transition"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1b4431] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#0e281d] transition shadow-md border border-[#255840]"
             >
               <Phone size={14} />
               <span>WhatsApp Direct Support</span>
@@ -313,10 +313,10 @@ export default function TrackOrderPage() {
         <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#b39b66]">
           Real-Time Scent Logistics
         </span>
-        <h1 className="text-3xl sm:text-5xl font-black uppercase text-neutral-900 font-serif">
+        <h1 className="text-3xl sm:text-5xl font-bold uppercase text-[#0e281d] font-[Gebuk] tracking-wider">
           Track Your Parcel
         </h1>
-        <p className="text-sm text-neutral-600 font-light">
+        <p className="text-sm text-neutral-700 font-normal">
           Enter your unique tracking ID to inspect your parcel&apos;s bottling, packing, and courier progress.
         </p>
       </div>
