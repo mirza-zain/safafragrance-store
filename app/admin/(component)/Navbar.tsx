@@ -1,18 +1,34 @@
 'use client';
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutGrid,
   BarChart3,
   Receipt,
   Package,
   Tag,
-  ArrowLeft
+  ArrowLeft,
+  LogOut
 } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  if (pathname === "/admin/login") {
+    return null;
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+      router.push("/admin/login");
+      router.refresh();
+    } catch {
+      router.push("/admin/login");
+    }
+  };
 
   const links = [
     { href: "/admin", label: "Dashboard", icon: LayoutGrid, exact: true },
@@ -58,7 +74,14 @@ export default function Navbar() {
         </ul>
       </div>
 
-      <div className="mt-4 border-t border-neutral-100 pt-4 md:mt-auto md:pt-6">
+      <div className="mt-4 border-t border-neutral-100 pt-4 md:mt-auto md:pt-6 space-y-1">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition text-left"
+        >
+          <LogOut className="size-4" />
+          <span>Sign Out</span>
+        </button>
         <Link
           className="flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-neutral-500 hover:text-black hover:bg-neutral-100 rounded-xl transition"
           href="/"

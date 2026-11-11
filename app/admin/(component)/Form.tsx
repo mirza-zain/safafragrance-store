@@ -40,7 +40,7 @@ export default function Form({ product, onProductSaved }: FormProps) {
     olfactoryFamily: product?.olfactoryFamily ?? "Oriental Woody",
     price: product?.price ?? 4500,
     stock: product?.stock ?? 30,
-    image: product?.image ?? "/images/featurev1.png",
+    image: product?.image ?? "/images/safaPerfume.png",
     variants: product?.variants ?? [
       { label: "50ml Extrait", price: product?.price ?? 4500, stock: 20 },
       { label: "100ml Extrait", price: Math.round((product?.price ?? 4500) * 1.6), stock: 10 }
@@ -163,7 +163,7 @@ export default function Form({ product, onProductSaved }: FormProps) {
           olfactoryFamily: "Oriental Woody",
           price: 4500,
           stock: 30,
-          image: "/images/featurev1.png",
+          image: "/images/safaPerfume.png",
           variants: [
             { label: "50ml Extrait", price: 4500, stock: 20 },
             { label: "100ml Extrait", price: 7200, stock: 10 }
@@ -376,7 +376,7 @@ export default function Form({ product, onProductSaved }: FormProps) {
                 name="image"
                 value={formData.image}
                 onChange={handleData}
-                placeholder="/images/featurev1.png"
+                placeholder="/images/safaPerfume.png"
                 className="flex-1 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-black"
               />
             </div>

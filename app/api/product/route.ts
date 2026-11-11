@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       olfactoryFamily: body.olfactoryFamily || "Oriental Oud",
       price: Number(body.price),
       stock: Number(body.stock || 20),
-      image: body.image || "/images/featurev1.png",
+      image: body.image || "/images/safaPerfume.png",
       concentration: body.concentration || "Extrait de Parfum • 35%",
       sillage: body.sillage || "Commanding",
       longevity: body.longevity || "14+ Hours",

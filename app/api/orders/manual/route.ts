@@ -58,7 +58,7 @@ export async function POST(request: Request) {
           variantLabel: it.variantLabel || "Standard",
           quantity: Number(it.quantity),
           price: Number(it.price),
-          image: prod ? prod.image : "/images/featurev1.png"
+          image: prod ? prod.image : "/images/safaPerfume.png"
         };
       }),
       subTotal: calculatedSubtotal,

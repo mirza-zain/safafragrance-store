@@ -1,32 +1,8 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: 'Kugile';
-  src: url('/fonts/Kugile_Demo.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Batica';
-  src: url('/fonts/BaticaSans-Regular.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Firlest';
-  src: url('/fonts/Firlest-Regular.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Gebuk';
-  src: url('/fonts/Gebuk-Regular.ttf') format('truetype');
+  font-family: 'Galsod';
+  src: url('/fonts/galsod.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -45,19 +21,20 @@
 
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-serif: Georgia, 'Times New Roman', Didot, 'Playfair Display', serif;
-  --font-gebuk: 'Gebuk', Georgia, "Times New Roman", serif;
-  --font-batica: 'Batica', var(--font-sans);
+  --font-serif: 'Galsod', Georgia, 'Times New Roman', serif;
+  --font-display: 'Galsod', Georgia, 'Times New Roman', serif;
+  --font-galsod: 'Galsod', Georgia, 'Times New Roman', serif;
 }
 
-.font-\[Gebuk\], .font-gebuk {
-  font-family: 'Gebuk', Georgia, "Times New Roman", serif;
+/* Primary Luxury Display Font: Galsod */
+.font-display,
+.font-\[Galsod\],
+.font-galsod,
+.font-\[Gebuk\],
+.font-gebuk {
+  font-family: 'Galsod', Georgia, 'Times New Roman', serif;
   letter-spacing: 0.04em;
   font-synthesis: none;
-}
-
-.font-\[Batica\], .font-batica {
-  font-family: 'Batica', var(--font-sans);
 }
 
 .font-serif {

@@ -5,6 +5,7 @@ import { MessageSquare, X, Sparkles } from "lucide-react";
 
 export default function FloatingWhatsApp() {
   const [open, setOpen] = useState(false);
+  const whatsappNum = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "923001234567";
 
   return (
     <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end">
@@ -37,7 +38,7 @@ export default function FloatingWhatsApp() {
           </div>
 
           <a
-            href="https://wa.me/923001234567?text=Hello%20Safa%20Fragrance,%20I%20would%20like%20guidance%20on%20choosing%20a%20signature%20scent."
+            href={`https://wa.me/${whatsappNum}?text=Hello%20Safa%20Fragrance,%20I%20would%20like%20guidance%20on%20choosing%20a%20signature%20scent.`}
             target="_blank"
             rel="noreferrer"
             className="w-full py-3 rounded-xl bg-[#1b4431] hover:bg-[#0e281d] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-md border border-[#255840]"

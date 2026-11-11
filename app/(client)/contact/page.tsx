@@ -1,16 +1,19 @@
 import { Mail, Phone } from "lucide-react";
 
+const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "concierge@safafragrance.com";
+const whatsappNum = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "923001234567";
+
 const contactDetails = [
   {
     label: "Email",
-    value: "concierge@safafragrance.com",
-    href: "mailto:concierge@safafragrance.com",
+    value: supportEmail,
+    href: `mailto:${supportEmail}`,
     icon: Mail,
   },
   {
     label: "WhatsApp & Phone",
-    value: "+92 300 1234567",
-    href: "https://wa.me/923001234567",
+    value: `+${whatsappNum.replace(/^(\d{2})(\d{3})(\d{7})$/, "$1 $2 $3")}`,
+    href: `https://wa.me/${whatsappNum}`,
     icon: Phone,
   },
 ];
@@ -44,7 +47,7 @@ export default function ContactPage() {
           <p className="text-xs sm:text-sm uppercase tracking-[0.28em] text-[#b39b66] font-semibold">
             Safa Fragrance Support
           </p>
-          <h1 className="mt-4 text-4xl sm:text-6xl lg:text-7xl font-bold tracking-wider leading-[1.08] text-[#0e281d] font-[Gebuk] uppercase">
+          <h1 className="mt-4 text-4xl sm:text-6xl lg:text-7xl font-bold tracking-wider leading-[1.08] text-[#0e281d] font-[Galsod] uppercase">
             Contact Us
           </h1>
           <p className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-neutral-700 font-normal">
@@ -78,7 +81,7 @@ export default function ContactPage() {
               <p className="text-xs uppercase tracking-[0.2em] text-[#b39b66] font-semibold">
                 Follow Us
               </p>
-              <p className="mt-3 max-w-sm text-2xl sm:text-3xl font-bold uppercase text-[#0e281d] font-[Gebuk] leading-tight tracking-wider">
+              <p className="mt-3 max-w-sm text-2xl sm:text-3xl font-bold uppercase text-[#0e281d] font-[Galsod] leading-tight tracking-wider">
                 Stay close to the world of Safa Fragrance.
               </p>
               <p className="mt-3 text-xs sm:text-sm text-neutral-600 font-normal leading-relaxed">

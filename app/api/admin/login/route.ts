@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ADMIN_EMAIL, ADMIN_PASSWORD, COOKIE_NAME, signAdminToken } from "@/app/lib/admin-auth";
+import { auth } from "@/app/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -12,13 +13,38 @@ export async function POST(request: Request) {
     const trimmedEmail = String(email).trim().toLowerCase();
     const expectedEmail = ADMIN_EMAIL.trim().toLowerCase();
 
-    if (trimmedEmail !== expectedEmail || String(password) !== ADMIN_PASSWORD) {
+    // Verify against configured Admin credentials
+    const isDirectAdmin = trimmedEmail === expectedEmail && String(password) === ADMIN_PASSWORD;
+
+    // Also attempt Better Auth sign-in verification
+    let betterAuthSuccess = false;
+    try {
+      const res = await auth.api.signInEmail({
+        body: {
+          email: trimmedEmail,
+          password: String(password),
+        },
+      });
+      betterAuthSuccess = Boolean(res);
+    } catch {
+      betterAuthSuccess = false;
+    }
+
+    if (!isDirectAdmin && !betterAuthSuccess) {
       return NextResponse.json({ error: "Invalid admin email or password" }, { status: 401 });
     }
 
     const token = signAdminToken(trimmedEmail);
 
-    const response = NextResponse.json({ success: true, message: "Authentication successful" });
+    const response = NextResponse.json({
+      success: true,
+      message: "Authentication successful",
+      user: {
+        email: trimmedEmail,
+        role: "admin",
+      },
+    });
+
     response.cookies.set({
       name: COOKIE_NAME,
       value: token,
@@ -26,7 +52,7 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7 // 7 days
+      maxAge: 60 * 60 * 24 * 7, // 7 days
     });
 
     return response;

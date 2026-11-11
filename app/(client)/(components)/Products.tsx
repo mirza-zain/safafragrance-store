@@ -228,8 +228,24 @@ export default function Products({ limit }: Props) {
 
       {/* Empty State */}
       {!loading && !error && products.length === 0 && (
-        <div className="text-center py-16 text-sm text-neutral-500">
-          <p>No fragrances found in this category.</p>
+        <div className="text-center py-20 px-4 max-w-md mx-auto space-y-4">
+          <div className="size-12 rounded-full bg-[#1b4431]/10 flex items-center justify-center mx-auto text-[#1b4431]">
+            ✦
+          </div>
+          <h3 className="text-xl font-bold uppercase tracking-wider font-[Galsod] text-[#0e281d]">
+            Collection In Creation
+          </h3>
+          <p className="text-sm text-neutral-600 leading-relaxed font-normal">
+            Our master perfumers are curating the next private reserve editions. Explore our brand story or contact our concierge for inquiries.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-2 rounded-full bg-[#1b4431] px-6 py-2.5 text-xs font-semibold tracking-widest uppercase text-white hover:bg-[#0e281d] transition"
+            >
+              Contact Concierge
+            </Link>
+          </div>
         </div>
       )}
 

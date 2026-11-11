@@ -11,7 +11,7 @@ export default function Blog() {
           The Safa Standard
         </p>
 
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-wider text-[#0e281d] font-[Gebuk] leading-tight">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-wider text-[#0e281d] font-[Galsod] leading-tight">
           Premium Fragrance Without Compromise
         </h2>
 
@@ -52,12 +52,12 @@ export default function Blog() {
       </div>
 
       <div className="w-full lg:w-1/2 flex items-center justify-center">
-        <div className="relative w-full max-h-[460px] lg:max-h-[520px] aspect-4/3 overflow-hidden rounded-3xl shadow-lg border border-[#e7decb]">
+        <div className="relative w-full max-h-[460px] lg:max-h-[520px] aspect-4/3 overflow-hidden rounded-3xl shadow-lg border border-[#e7decb] bg-[#faf7f2] flex items-center justify-center p-6">
           <Image
-            src="/images/aboutscent.png"
+            src="/images/safaPerfume.png"
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover object-top"
+            className="object-contain"
             alt="The Safa Standard craft and heritage"
           />
         </div>

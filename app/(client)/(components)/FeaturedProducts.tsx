@@ -48,6 +48,10 @@ export default function FeaturedProducts() {
     loadFeatured();
   }, []);
 
+  if (!loading && products.length === 0) {
+    return null;
+  }
+
   return (
     <section className="w-full py-16 sm:py-24 px-4 sm:px-8 lg:px-12 max-w-7xl mx-auto">
       {/* Editorial Header */}
@@ -56,7 +60,7 @@ export default function FeaturedProducts() {
           Curated Selection
         </p>
 
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-wider text-[#0e281d] font-[Gebuk]">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-wider text-[#0e281d] font-[Galsod]">
           Featured Fragrances
         </h2>
 

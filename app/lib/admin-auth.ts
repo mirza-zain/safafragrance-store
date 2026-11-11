@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "safa-fragrance-secure-admin-secret-2026-key";
-export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@safafragrance.com";
-export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "safa2026!";
+export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@safa.com";
+export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "@Safa,786";
 export const COOKIE_NAME = "safa_admin_token";
 
 export function signAdminToken(email: string): string {

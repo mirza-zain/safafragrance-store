@@ -52,7 +52,7 @@ export default function CartPage() {
           <div className="size-20 rounded-full bg-[#faf7f2] border border-[#e7decb] flex items-center justify-center mb-6">
             <ShoppingBag className="size-10 text-[#b39b66]" />
           </div>
-          <h1 className="text-3xl font-bold uppercase tracking-wider text-[#0e281d] font-[Gebuk]">
+          <h1 className="text-3xl font-bold uppercase tracking-wider text-[#0e281d] font-[Galsod]">
             Your Cart is Empty
           </h1>
           <p className="mt-3 text-neutral-700 text-sm sm:text-base leading-relaxed font-normal">
@@ -80,7 +80,7 @@ export default function CartPage() {
           >
             <ArrowLeft className="size-4" /> Continue Shopping
           </Link>
-          <h1 className="text-3xl sm:text-4xl font-bold uppercase tracking-wider text-[#0e281d] font-[Gebuk]">
+          <h1 className="text-3xl sm:text-4xl font-bold uppercase tracking-wider text-[#0e281d] font-[Galsod]">
             Shopping Cart{" "}
             <span className="text-base sm:text-lg font-normal text-neutral-500 font-sans">
               ({totalItems} {totalItems === 1 ? "item" : "items"})
@@ -100,7 +100,7 @@ export default function CartPage() {
               {/* Product Thumbnail */}
               <div className="relative w-28 h-28 sm:w-24 sm:h-24 aspect-square rounded-xl overflow-hidden border border-[#eee6d7] shrink-0 bg-[#faf7f2]">
                 <Image
-                  src={item.image || "/images/icon2.png"}
+                  src={item.image || "/images/safaPerfume.png"}
                   alt={item.name}
                   fill
                   className="object-cover"
@@ -176,7 +176,7 @@ export default function CartPage() {
 
         {/* Order Summary Sidebar */}
         <div className="lg:col-span-4 bg-white p-6 sm:p-8 rounded-2xl border border-[#e7decb] shadow-xs sticky top-24">
-          <h2 className="text-xl font-bold uppercase tracking-wider text-[#0e281d] pb-4 border-b border-[#eee6d7] font-[Gebuk]">
+          <h2 className="text-xl font-bold uppercase tracking-wider text-[#0e281d] pb-4 border-b border-[#eee6d7] font-[Galsod]">
             Order Summary
           </h2>
 

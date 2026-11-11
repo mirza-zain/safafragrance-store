@@ -32,7 +32,7 @@ export default function Reviews() {
             <p className="mb-2 text-xs uppercase tracking-[0.3em] font-semibold text-[#b39b66]">
               Patron Notes
             </p>
-            <h2 id="reviews-heading" className="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-wider text-[#0e281d] font-[Gebuk]">
+            <h2 id="reviews-heading" className="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-wider text-[#0e281d] font-[Galsod]">
               Loved for the last note
             </h2>
           </div>

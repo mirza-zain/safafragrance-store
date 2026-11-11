@@ -155,7 +155,7 @@ function ProductDetailContent({ params }: Props) {
           <div className="w-full lg:w-1/2 flex justify-center items-center sticky top-24">
             <div className="w-full max-w-xs sm:max-w-md lg:max-w-lg aspect-square relative rounded-3xl overflow-hidden shadow-lg border-2 border-[#e7decb] bg-[#faf7f2]">
               <Image
-                src={prodDetail.image || "/images/icon2.png"}
+                src={prodDetail.image || "/images/safaPerfume.png"}
                 alt={prodDetail.name}
                 fill
                 className="object-cover"
@@ -183,7 +183,7 @@ function ProductDetailContent({ params }: Props) {
               )}
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-wider mt-3 text-[#0e281d] leading-tight font-[Gebuk]">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-wider mt-3 text-[#0e281d] leading-tight font-[Galsod]">
               {prodDetail.name}
             </h1>
 
@@ -262,7 +262,7 @@ function ProductDetailContent({ params }: Props) {
                     name: prodDetail.name,
                     description: prodDetail.description,
                     category: prodDetail.category,
-                    image: prodDetail.image || "/images/icon2.png",
+                    image: prodDetail.image || "/images/safaPerfume.png",
                     price: activePrice,
                     stock: activeStock,
                     variantLabel: selectedVariant?.label,

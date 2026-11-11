@@ -178,7 +178,7 @@ export default function PaymentPage() {
             <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#b39b66]">
               Order Confirmed & Sealed
             </span>
-            <h1 className="text-3xl sm:text-4xl font-bold uppercase text-neutral-900 font-[Gebuk] tracking-wider">
+            <h1 className="text-3xl sm:text-4xl font-bold uppercase text-neutral-900 font-[Galsod] tracking-wider">
               Thank You, {createdOrder.firstName}!
             </h1>
             <p className="text-sm text-neutral-700 font-normal max-w-lg mx-auto">
@@ -245,7 +245,7 @@ export default function PaymentPage() {
               Track Parcel Status →
             </Link>
             <a
-              href={`https://wa.me/923001234567?text=Hello%20Safa%20Fragrance,%20my%20Order%20Tracking%20ID%20is%20${trackingId}`}
+              href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "923001234567"}?text=Hello%20Safa%20Fragrance,%20my%20Order%20Tracking%20ID%20is%20${trackingId}`}
               target="_blank"
               rel="noreferrer"
               className="flex-1 py-4 rounded-xl border border-[#d8cbb5] bg-white text-neutral-900 font-bold text-xs uppercase tracking-wider hover:border-[#1b4431] transition flex items-center justify-center gap-2"
@@ -290,7 +290,7 @@ export default function PaymentPage() {
         <span className="text-xs uppercase font-bold tracking-[0.25em] text-[#b39b66]">
           Secure Haute Parfumerie Checkout
         </span>
-        <h1 className="text-3xl sm:text-4xl font-bold uppercase text-neutral-900 font-[Gebuk] mt-1 tracking-wider">
+        <h1 className="text-3xl sm:text-4xl font-bold uppercase text-neutral-900 font-[Galsod] mt-1 tracking-wider">
           Complete Your Order
         </h1>
       </div>
@@ -301,7 +301,7 @@ export default function PaymentPage() {
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* 1. Contact & Recipient */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#e5dbc7] shadow-xs space-y-5">
-              <h2 className="text-lg font-bold uppercase tracking-wider font-[Gebuk] text-[#0e281d] flex items-center gap-2">
+              <h2 className="text-lg font-bold uppercase tracking-wider font-[Galsod] text-[#0e281d] flex items-center gap-2">
                 <span className="size-6 rounded-full bg-[#1b4431] text-white text-xs flex items-center justify-center font-sans">
                   1
                 </span>
@@ -379,7 +379,7 @@ export default function PaymentPage() {
 
             {/* 2. Delivery Address */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#e5dbc7] shadow-xs space-y-5">
-              <h2 className="text-lg font-bold uppercase tracking-wider font-[Gebuk] text-[#0e281d] flex items-center gap-2">
+              <h2 className="text-lg font-bold uppercase tracking-wider font-[Galsod] text-[#0e281d] flex items-center gap-2">
                 <span className="size-6 rounded-full bg-[#1b4431] text-white text-xs flex items-center justify-center font-sans">
                   2
                 </span>
@@ -440,7 +440,7 @@ export default function PaymentPage() {
 
             {/* 3. Payment Method */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#e5dbc7] shadow-xs space-y-6">
-              <h2 className="text-lg font-bold uppercase tracking-wider font-[Gebuk] text-[#0e281d] flex items-center gap-2">
+              <h2 className="text-lg font-bold uppercase tracking-wider font-[Galsod] text-[#0e281d] flex items-center gap-2">
                 <span className="size-6 rounded-full bg-[#1b4431] text-white text-xs flex items-center justify-center font-sans">
                   3
                 </span>
@@ -630,7 +630,7 @@ export default function PaymentPage() {
 
         {/* Right Sidebar: Order Summary */}
         <div className="lg:col-span-5 bg-white p-6 sm:p-8 rounded-3xl border border-[#e5dbc7] shadow-md sticky top-24 space-y-6">
-          <h2 className="text-xl font-bold uppercase tracking-wider text-[#0e281d] pb-4 border-b border-[#eee6d7] font-[Gebuk]">
+          <h2 className="text-xl font-bold uppercase tracking-wider text-[#0e281d] pb-4 border-b border-[#eee6d7] font-[Galsod]">
             Bag Review ({cart.reduce((a, b) => a + b.quantity, 0)})
           </h2>
 

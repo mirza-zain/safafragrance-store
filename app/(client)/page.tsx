@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import SpecialItems from "./(components)/SpecialItems";
 import Blog from "./(components)/Blog";
 import FeaturedProducts from "./(components)/FeaturedProducts";
 import Reviews from "./(components)/Reviews";
@@ -16,7 +15,7 @@ export default function Home() {
             <p className="text-xs uppercase tracking-[0.3em] font-semibold text-[#b39b66] mb-3">
               Haute Parfumerie • Pakistan
             </p>
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold uppercase leading-[1.08] tracking-wider font-[Gebuk] text-[#0e281d]">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold uppercase leading-[1.08] tracking-wider font-[Galsod] text-[#0e281d]">
               Explore Premium Scent
             </h1>
             <p className="mt-5 text-sm sm:text-base lg:text-lg text-neutral-700 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
@@ -25,13 +24,13 @@ export default function Home() {
 
             {/* Editorial Discovery Actions */}
             <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-4">
-              <a
-                href="#featured"
+              <Link
+                href="/product"
                 className="inline-flex items-center gap-2 rounded-full bg-[#1b4431] px-7 py-3.5 text-xs sm:text-sm font-semibold tracking-widest uppercase text-white hover:bg-[#0e281d] transition-all duration-200 shadow-md border border-[#255840] active:scale-[0.98]"
               >
-                <span>Explore Editions</span>
-                <span className="text-[#d8c38c]">↓</span>
-              </a>
+                <span>Explore Collection</span>
+                <span className="text-[#d8c38c]">→</span>
+              </Link>
 
               <a
                 href="#story"
@@ -60,7 +59,7 @@ export default function Home() {
             <div className="relative aspect-4/5 w-4/5 max-w-sm sm:max-w-md rounded-3xl overflow-hidden bg-gradient-to-b from-white to-[#faf7f2] border border-[#e7decb] shadow-xl p-6 sm:p-8 flex items-center justify-center group">
               <div className="relative w-full h-full">
                 <Image
-                  src="/images/icon2.png"
+                  src="/images/safaPerfume.png"
                   alt="Safa Fragrance Artisanal Extrait"
                   fill
                   priority
@@ -73,10 +72,28 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Signature Lines */}
-      <div id="featured">
-        <SpecialItems />
-      </div>
+      {/* Luxury Campaign Editorial Banner */}
+      <section className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-12">
+        <Link
+          href="/product"
+          className="group block relative w-full overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl border border-[#e7decb] bg-[#faf7f2] shadow-md sm:shadow-xl hover:shadow-2xl active:scale-[0.99] transition-all duration-500"
+          aria-label="Discover Safa Fragrance Private Reserve Collection"
+        >
+          <div className="relative w-full">
+            <Image
+              src="/images/banner.png"
+              alt="Safa Fragrance Haute Parfumerie Campaign"
+              width={1584}
+              height={396}
+              priority
+              quality={95}
+              className="w-full h-auto block object-contain transition-transform duration-700 ease-out group-hover:scale-[1.015]"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 95vw, 1280px"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </div>
+        </Link>
+      </section>
 
       {/* Brand Story */}
       <div id="story">
@@ -89,7 +106,7 @@ export default function Home() {
           <p className="text-[11px] uppercase tracking-[0.3em] font-semibold text-[#b39b66]">
             Artisanal Precision • Pure Oil Extract
           </p>
-          <blockquote className="text-xl sm:text-2xl md:text-3xl font-normal text-[#0e281d] font-[Gebuk] uppercase tracking-wide max-w-2xl mx-auto leading-relaxed">
+          <blockquote className="text-xl sm:text-2xl md:text-3xl font-normal text-[#0e281d] font-[Galsod] uppercase tracking-wide max-w-2xl mx-auto leading-relaxed">
             &ldquo;A fragrance should never announce itself loudly, but linger indelibly.&rdquo;
           </blockquote>
         </div>

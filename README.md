@@ -4,7 +4,7 @@ A luxury perfume e-commerce web platform and executive portal built for **Safa F
 
 ---
 
-## 💎 Features & Upgrades Over Zarb
+## 💎 Haute Parfumerie Core Features
 
 ### 1. Customer Storefront
 - **Haute Parfumerie Brand Identity**: Custom bespoke visual styling with brand logo (`/logo.png`), luxury typography (`Gebuk`, `Batica`, `Kugile`), and an emerald & gold palette.
