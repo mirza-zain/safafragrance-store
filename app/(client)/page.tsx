@@ -3,6 +3,7 @@ import Link from "next/link";
 import Blog from "./(components)/Blog";
 import FeaturedProducts from "./(components)/FeaturedProducts";
 import Reviews from "./(components)/Reviews";
+import InteractiveSprayBottle from "./(components)/InteractiveSprayBottle";
 
 export default function Home() {
   return (
@@ -54,20 +55,9 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Showcase Visual */}
+          {/* Right Showcase Visual: Interactive Liquid Flacon with Fine-Mist Atomizer Spray */}
           <div className="flex w-full items-center justify-center lg:w-1/2">
-            <div className="relative aspect-4/5 w-4/5 max-w-sm sm:max-w-md rounded-3xl overflow-hidden bg-gradient-to-b from-white to-[#faf7f2] border border-[#e7decb] shadow-xl p-6 sm:p-8 flex items-center justify-center group">
-              <div className="relative w-full h-full">
-                <Image
-                  src="/images/safaPerfume.png"
-                  alt="Safa Fragrance Artisanal Extrait"
-                  fill
-                  priority
-                  className="object-contain transition-transform duration-700 ease-out group-hover:scale-105"
-                  sizes="(max-width: 640px) 80vw, 400px"
-                />
-              </div>
-            </div>
+            <InteractiveSprayBottle />
           </div>
         </div>
       </header>

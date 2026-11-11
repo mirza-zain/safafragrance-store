@@ -189,7 +189,20 @@ export function getStore() {
     },
 
     getFeaturedProducts: () => {
-      return data.products.filter((p) => p.isFeatured);
+      const featured = data.products.filter((p) => p.isFeatured);
+      if (featured.length > 0) return featured.slice(0, 4);
+      // Fallback: return up to 4 products from the catalog
+      return data.products.slice(0, 4);
+    },
+
+    setFeaturedProducts: (featuredIds: number[]) => {
+      data.products.forEach((p) => {
+        p.isFeatured = featuredIds.includes(p.id);
+      });
+      saveStoreData(data);
+      return featuredIds
+        .map((id) => data.products.find((p) => p.id === id))
+        .filter(Boolean);
     },
 
     addProduct: (newProd: Omit<Product, "id">) => {
