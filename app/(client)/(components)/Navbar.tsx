@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import { ShoppingBag, Menu, X, Shield } from "lucide-react";
 import { useCart } from "@/app/context/CartContext";
 import logo from "@/public/logo.png";
-import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const { totalItems, setIsCartOpen } = useCart();
@@ -84,10 +83,8 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Right Action Icons: Notifications & Cart */}
+          {/* Right Action Icons: Cart & Mobile Menu */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <NotificationBell />
-
             {/* Shopping Bag Trigger for Drawer */}
             <button
               onClick={() => setIsCartOpen(true)}

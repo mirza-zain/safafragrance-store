@@ -23,8 +23,7 @@ A luxury perfume e-commerce web platform and executive portal built for **Safa F
   - Size variants (50ml / 100ml) with dynamic pricing & stock synchronization
 - **Interactive Slide-Over Cart Drawer (`CartDrawer`) & Full Cart (`/cart`)**:
   - Instant slide-over drawer accessible from any page
-  - Free delivery progress tier (unlocked on orders over Rs. 6,000)
-  - Real-time coupon code validation and subtotal computation
+  - Real-time subtotal computation and direct checkout links
 - **Streamlined Luxury Checkout (`/payment`)**:
   - Cash on Delivery (COD) for Karachi
   - Direct Bank Transfer & Raast for nationwide orders

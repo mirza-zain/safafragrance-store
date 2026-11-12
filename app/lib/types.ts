@@ -16,7 +16,7 @@ export type Product = {
   tagline: string;
   description: string;
   category: "mens" | "women" | "unisex";
-  olfactoryFamily: "Oriental Oud" | "Woody Amber" | "Floral Bouquet" | "Fresh Aquatic" | "Citrus Leather";
+  olfactoryFamily?: "Oriental Oud" | "Woody Amber" | "Floral Bouquet" | "Fresh Aquatic" | "Citrus Leather" | string;
   price: number;
   stock: number;
   image: string;
@@ -25,7 +25,7 @@ export type Product = {
   longevity: string;
   season: string;
   notes: FragranceNotes;
-  variants: ProductVariant[];
+  variants?: ProductVariant[];
   isFeatured: boolean;
   rating: number;
   reviewCount: number;

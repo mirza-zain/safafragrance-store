@@ -34,18 +34,16 @@ export async function POST(request: Request) {
       tagline: body.tagline?.trim() || body.name,
       description: body.description.trim(),
       category: body.category || "unisex",
-      olfactoryFamily: body.olfactoryFamily || "Oriental Oud",
+      olfactoryFamily: body.olfactoryFamily || undefined,
       price: Number(body.price),
-      stock: Number(body.stock || 20),
+      stock: Number(body.stock ?? 0),
       image: body.image || "/images/safaPerfume.png",
       concentration: body.concentration || "Extrait de Parfum • 35%",
       sillage: body.sillage || "Commanding",
       longevity: body.longevity || "14+ Hours",
       season: body.season || "All Seasons",
       notes: body.notes || { top: [], heart: [], base: [] },
-      variants: Array.isArray(body.variants) && body.variants.length > 0 ? body.variants : [
-        { label: "50ml Extrait", price: Number(body.price), stock: Number(body.stock || 20) }
-      ],
+      variants: Array.isArray(body.variants) ? body.variants : [],
       isFeatured: Boolean(body.isFeatured),
       rating: 5.0,
       reviewCount: 1

@@ -51,9 +51,7 @@ export async function subscribeUserToPush(): Promise<{ success: boolean; message
     await navigator.serviceWorker.ready;
 
     // Get public key
-    const vapidKey =
-      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-      'BLy9-s3PpXKDQmQSGno9iZOiJ2FGWYNYiCIH0vYZK3y7pctD2jFlTFzlp2OHOlxpF5POeeZT85hECsbEgKX6zhA';
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
 
     const convertedKey = urlBase64ToUint8Array(vapidKey);
 

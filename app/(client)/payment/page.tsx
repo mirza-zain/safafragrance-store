@@ -56,7 +56,7 @@ export default function PaymentPage() {
   }, [isKarachi, paymentMethod]);
 
   const subTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const deliveryAmount = subTotal >= 6000 ? 0 : isKarachi ? 0 : 250;
+  const deliveryAmount = isKarachi ? 0 : 250;
   const grandTotal = Math.max(0, subTotal - appliedDiscount + deliveryAmount);
 
   const handleCopy = async (text: string, field: string) => {
@@ -668,7 +668,7 @@ export default function PaymentPage() {
             <div className="flex justify-between text-neutral-600">
               <span>Delivery Charges</span>
               <span className="font-semibold text-neutral-900">
-                {deliveryAmount === 0 ? "FREE" : `Rs. ${deliveryAmount.toLocaleString()}`}
+                {deliveryAmount === 0 ? "FREE (Karachi)" : `Rs. ${deliveryAmount.toLocaleString()}`}
               </span>
             </div>
             {appliedDiscount > 0 && (

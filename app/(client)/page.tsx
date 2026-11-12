@@ -3,64 +3,13 @@ import Link from "next/link";
 import Blog from "./(components)/Blog";
 import FeaturedProducts from "./(components)/FeaturedProducts";
 import Reviews from "./(components)/Reviews";
-import InteractiveSprayBottle from "./(components)/InteractiveSprayBottle";
+import Safa3DHero from "./(components)/Safa3DHero";
 
 export default function Home() {
   return (
     <>
-      {/* Minimalist Luxury Hero */}
-      <header className="mx-auto flex min-h-[85vh] w-full max-w-7xl items-center justify-center px-4 py-12 sm:px-8 lg:py-16">
-        <div className="flex w-full flex-col-reverse items-center justify-between gap-12 lg:flex-row lg:gap-16">
-          {/* Left Editorial Copy */}
-          <div className="w-full text-center lg:w-1/2 lg:text-left">
-            <p className="text-xs uppercase tracking-[0.3em] font-semibold text-[#b39b66] mb-3">
-              Haute Parfumerie • Pakistan
-            </p>
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold uppercase leading-[1.08] tracking-wider font-[Galsod] text-[#0e281d]">
-              Explore Premium Scent
-            </h1>
-            <p className="mt-5 text-sm sm:text-base lg:text-lg text-neutral-700 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              Artisanal Extrait de Parfum formulated with concentrated perfume oils. Subtle up close, commanding from afar, and unforgettable once you leave.
-            </p>
-
-            {/* Editorial Discovery Actions */}
-            <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-4">
-              <Link
-                href="/product"
-                className="inline-flex items-center gap-2 rounded-full bg-[#1b4431] px-7 py-3.5 text-xs sm:text-sm font-semibold tracking-widest uppercase text-white hover:bg-[#0e281d] transition-all duration-200 shadow-md border border-[#255840] active:scale-[0.98]"
-              >
-                <span>Explore Collection</span>
-                <span className="text-[#d8c38c]">→</span>
-              </Link>
-
-              <a
-                href="#story"
-                className="inline-flex items-center gap-2 rounded-full border border-[#1b4431]/40 bg-white/90 px-6 py-3.5 text-xs sm:text-sm font-semibold tracking-widest uppercase text-[#1b4431] hover:border-[#1b4431] hover:bg-[#1b4431] hover:text-white transition-all duration-200"
-              >
-                <span>The Safa Standard</span>
-              </a>
-            </div>
-
-            {/* Luxury Accreditation Badges */}
-            <div className="mt-10 pt-6 border-t border-[#e7decb] flex flex-wrap items-center justify-center lg:justify-start gap-5 sm:gap-6 text-xs text-neutral-600 font-medium">
-              <span className="flex items-center gap-1.5">
-                <span className="text-[#b39b66]">✦</span> Extrait Concentration
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="text-[#b39b66]">✦</span> 12+ Hour Sillage
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="text-[#b39b66]">✦</span> Express Nationwide Delivery
-              </span>
-            </div>
-          </div>
-
-          {/* Right Showcase Visual: Interactive Liquid Flacon with Fine-Mist Atomizer Spray */}
-          <div className="flex w-full items-center justify-center lg:w-1/2">
-            <InteractiveSprayBottle />
-          </div>
-        </div>
-      </header>
+      {/* Cinematic Haute Parfumerie 3D Flacon Stage */}
+      <Safa3DHero />
 
       {/* Luxury Campaign Editorial Banner */}
       <section className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-12">

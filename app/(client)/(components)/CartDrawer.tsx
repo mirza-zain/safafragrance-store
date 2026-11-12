@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Sparkles, ShieldCheck } from "lucide-react";
+import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, ShieldCheck } from "lucide-react";
 import { useCart } from "@/app/context/CartContext";
 import { useEffect } from "react";
 
@@ -21,10 +21,6 @@ export default function CartDrawer() {
   }, [isCartOpen]);
 
   if (!isCartOpen) return null;
-
-  const freeShippingThreshold = 6000;
-  const progressPercent = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
-  const diff = freeShippingThreshold - subtotal;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -57,23 +53,6 @@ export default function CartDrawer() {
               >
                 <X size={20} />
               </button>
-            </div>
-
-            {/* Free Shipping Tier */}
-            <div className="mt-4 pt-3 border-t border-[#eee6d7]">
-              <div className="flex justify-between items-center text-xs mb-1.5 font-medium">
-                <span className="flex items-center gap-1 text-[#1b4431]">
-                  <Sparkles size={13} className="text-[#b39b66]" />
-                  {diff <= 0 ? "Complimentary Nationwide Delivery unlocked!" : `Add Rs. ${diff.toLocaleString()} for Free Express Delivery`}
-                </span>
-                <span className="text-neutral-500">{progressPercent}%</span>
-              </div>
-              <div className="w-full h-1.5 bg-[#e5dbc7] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-[#b39b66] to-[#1b4431] transition-all duration-500"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
             </div>
           </div>
 
@@ -158,7 +137,7 @@ export default function CartDrawer() {
                 </div>
                 <div className="flex justify-between text-neutral-600 text-xs">
                   <span>Estimated Delivery</span>
-                  <span>{subtotal >= 6000 ? "FREE" : "Calculated at checkout"}</span>
+                  <span>Calculated at checkout</span>
                 </div>
               </div>
 

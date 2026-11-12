@@ -23,11 +23,8 @@ export type PushPayload = {
   tag?: string;
 };
 
-const VAPID_PUBLIC_KEY =
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-  "BLy9-s3PpXKDQmQSGno9iZOiJ2FGWYNYiCIH0vYZK3y7pctD2jFlTFzlp2OHOlxpF5POeeZT85hECsbEgKX6zhA";
-const VAPID_PRIVATE_KEY =
-  process.env.VAPID_PRIVATE_KEY || "JFs3kLdjnNUoWCvimpj_OICSYK-BXa6t29KAJAXMgNQ";
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:concierge@safafragrance.com";
 
 let vapidConfigured = false;

@@ -63,17 +63,13 @@ function ShowcaseCard({ product, index }: ShowcaseCardProps) {
   const theme = SCENT_THEMES[index % SCENT_THEMES.length];
   const { addToCart } = useCart();
 
-  // Variant selection (default to first variant or 50ml)
-  const variants = product.variants && product.variants.length > 0
-    ? product.variants
-    : [
-        { label: "50 ml", price: product.price, stock: product.stock || 100 },
-        { label: "100 ml", price: Math.round(product.price * 1.65), stock: 50 },
-      ];
-
+  // Variant selection (only if product has variants)
+  const hasVariants = Boolean(product.variants && product.variants.length > 0);
+  const variants = hasVariants ? product.variants! : [];
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
-  const activeVariant = variants[selectedVariantIndex] || variants[0];
-  const currentPrice = Number(activeVariant.price) || product.price;
+  const activeVariant = hasVariants ? variants[selectedVariantIndex] || variants[0] : null;
+  const currentPrice = activeVariant ? (Number(activeVariant.price) || product.price) : Number(product.price);
+  const activeStock = activeVariant ? activeVariant.stock : Number(product.stock);
 
   // Add to Bag feedback state
   const [added, setAdded] = useState(false);
@@ -171,10 +167,10 @@ function ShowcaseCard({ product, index }: ShowcaseCardProps) {
         description: product.description,
         price: currentPrice,
         image: product.image || "/images/safaPerfume.png",
-        stock: activeVariant.stock,
+        stock: activeStock,
         category: product.category,
       },
-      activeVariant.label,
+      activeVariant?.label,
       1
     );
 
@@ -291,32 +287,34 @@ function ShowcaseCard({ product, index }: ShowcaseCardProps) {
 
           {/* Controls: Size Selector & Add to Bag */}
           <div className="mt-5 space-y-4 pt-4 border-t border-[#e7decb]/60">
-            {/* Size Variant Radio Buttons */}
-            <div
-              role="radiogroup"
-              aria-label="Select Volume"
-              className="flex items-center gap-2"
-            >
-              {variants.map((v, i) => {
-                const isSelected = i === selectedVariantIndex;
-                return (
-                  <button
-                    key={v.label}
-                    type="button"
-                    role="radio"
-                    aria-checked={isSelected}
-                    onClick={() => setSelectedVariantIndex(i)}
-                    className={`flex-1 rounded-full border py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                      isSelected
-                        ? "border-[#1b4431] bg-[#1b4431] text-white shadow-xs"
-                        : "border-[#e7decb] bg-white text-neutral-600 hover:border-[#1b4431]/60 hover:text-neutral-900"
-                    }`}
-                  >
-                    {v.label}
-                  </button>
-                );
-              })}
-            </div>
+            {/* Size Variant Radio Buttons (Shown when 2+ variants exist) */}
+            {variants.length > 1 && (
+              <div
+                role="radiogroup"
+                aria-label="Select Volume"
+                className="flex items-center gap-2"
+              >
+                {variants.map((v, i) => {
+                  const isSelected = i === selectedVariantIndex;
+                  return (
+                    <button
+                      key={v.label}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      onClick={() => setSelectedVariantIndex(i)}
+                      className={`flex-1 rounded-full border py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                        isSelected
+                          ? "border-[#1b4431] bg-[#1b4431] text-white shadow-xs"
+                          : "border-[#e7decb] bg-white text-neutral-600 hover:border-[#1b4431]/60 hover:text-neutral-900"
+                      }`}
+                    >
+                      {v.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Add to Bag Luxury Action Button */}
             <button
@@ -327,7 +325,7 @@ function ShowcaseCard({ product, index }: ShowcaseCardProps) {
                   ? "bg-[#0e281d] text-[#d8c38c] ring-2 ring-[#d8c38c]"
                   : "bg-[#1b4431] text-white hover:bg-[#0e281d] hover:shadow-lg border border-[#255840]"
               }`}
-              aria-label={`Add ${product.name} (${activeVariant.label}) to cart`}
+              aria-label={`Add ${product.name} ${activeVariant ? `(${activeVariant.label})` : ""} to cart`}
             >
               {added ? (
                 <>
@@ -381,6 +379,10 @@ export default function FeaturedProducts() {
 
     loadFeatured();
   }, []);
+
+  if (!loading && products.length === 0) {
+    return null;
+  }
 
   return (
     <section className="relative w-full overflow-hidden py-16 sm:py-24 px-4 sm:px-8 lg:px-12 max-w-7xl mx-auto">

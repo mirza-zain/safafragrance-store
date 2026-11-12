@@ -383,7 +383,6 @@ export function getStore() {
     },
 
     calculateDelivery: (city: string, subtotal: number) => {
-      if (subtotal >= 6000) return 0; // Free nationwide shipping on orders over Rs. 6000!
       const target = city.trim().toLowerCase();
       const match = data.delivery.find((d) => d.city.toLowerCase() === target && d.active);
       if (match) return match.amount;

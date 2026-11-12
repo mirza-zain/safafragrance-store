@@ -2,9 +2,7 @@ import { NextResponse } from "next/server";
 import { getAllSubscriptions, saveSubscription } from "@/app/lib/web-push";
 
 export async function GET() {
-  const publicKey =
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-    "BLy9-s3PpXKDQmQSGno9iZOiJ2FGWYNYiCIH0vYZK3y7pctD2jFlTFzlp2OHOlxpF5POeeZT85hECsbEgKX6zhA";
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
   const total = getAllSubscriptions().length;
 

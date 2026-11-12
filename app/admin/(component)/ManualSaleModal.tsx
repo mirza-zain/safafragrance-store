@@ -79,7 +79,7 @@ export default function ManualSaleModal({ isOpen, onClose, onSuccess }: ManualSa
           const initialVariant = first.variants?.[0];
           setItems([{
             productId: first.id,
-            variantLabel: initialVariant?.label || "50ml Extrait",
+            variantLabel: initialVariant?.label || "",
             quantity: 1,
             price: initialVariant ? Number(initialVariant.price) : Number(first.price),
             maxStock: initialVariant ? initialVariant.stock : Number(first.stock)
@@ -105,7 +105,7 @@ export default function ManualSaleModal({ isOpen, onClose, onSuccess }: ManualSa
     const newItems = [...items];
     newItems[index] = {
       productId,
-      variantLabel: initialVariant?.label || "50ml Extrait",
+      variantLabel: initialVariant?.label || "",
       quantity: 1,
       price: initialVariant ? Number(initialVariant.price) : Number(selectedProd.price),
       maxStock: initialVariant ? initialVariant.stock : Number(selectedProd.stock)
@@ -148,7 +148,7 @@ export default function ManualSaleModal({ isOpen, onClose, onSuccess }: ManualSa
       ...items,
       {
         productId: prod.id,
-        variantLabel: variant?.label || "50ml Extrait",
+        variantLabel: variant?.label || "",
         quantity: 1,
         price: variant ? Number(variant.price) : Number(prod.price),
         maxStock: variant ? variant.stock : Number(prod.stock)
