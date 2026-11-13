@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
-import { ADMIN_EMAIL, ADMIN_PASSWORD } from "@/app/lib/admin-auth";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, isAdminRequest } from "@/app/lib/admin-auth";
 import { auth } from "@/app/lib/auth";
 
 /**
@@ -18,7 +18,10 @@ function getNeonSql() {
  * GET /api/neon
  * Diagnostic & health-check endpoint for Neon PostgreSQL
  */
-export async function GET() {
+export async function GET(request: Request) {
+  if (!isAdminRequest(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const dbUrl = process.env.DATABASE_URL;
   const isPlaceholder = !dbUrl || dbUrl.includes("npg_placeholder") || !dbUrl.startsWith("postgres");
 
@@ -31,7 +34,7 @@ export async function GET() {
         "1. Create a free PostgreSQL database at https://console.neon.tech",
         "2. Copy your Connection String (e.g. postgresql://[user]:[password]@[endpoint].neon.tech/neondb?sslmode=require)",
         "3. Paste it as DATABASE_URL in .env.local",
-        "4. Call POST /api/neon to auto-initialize Better Auth tables and seed the admin user (admin@safa.com)."
+        "4. Call POST /api/neon to auto-initialize Better Auth tables and seed the admin user (admin@sufa.com)."
       ],
       adminCredentials: {
         email: ADMIN_EMAIL,
@@ -98,7 +101,7 @@ export async function GET() {
       adminEmail: ADMIN_EMAIL,
       nextStep: hasAuthTables
         ? "Neon DB and Better Auth are fully operational."
-        : "Send a POST request to /api/neon to automatically create Better Auth tables and seed admin@safa.com."
+        : "Send a POST request to /api/neon to automatically create Better Auth tables and seed admin@sufa.com."
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -120,6 +123,10 @@ export async function GET() {
  * Initializes Better Auth tables in Neon PostgreSQL and seeds the admin user
  */
 export async function POST(request: Request) {
+  if (!isAdminRequest(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const sql = getNeonSql();
 
   if (!sql) {
@@ -130,6 +137,9 @@ export async function POST(request: Request) {
       },
       { status: 400 }
     );
+  }
+  if (!ADMIN_PASSWORD) {
+    return NextResponse.json({ error: "ADMIN_PASSWORD is not configured" }, { status: 500 });
   }
 
   try {

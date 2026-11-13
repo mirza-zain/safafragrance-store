@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, COOKIE_NAME, signAdminToken } from "@/app/lib/admin-auth";
-import { auth } from "@/app/lib/auth";
+import { COOKIE_NAME, signAdminToken } from "@/app/lib/admin-auth";
+import { neon } from "@neondatabase/serverless";
+import { verifyPassword } from "better-auth/crypto";
 
 export async function POST(request: Request) {
   try {
@@ -11,37 +12,62 @@ export async function POST(request: Request) {
     }
 
     const trimmedEmail = String(email).trim().toLowerCase();
-    const expectedEmail = ADMIN_EMAIL.trim().toLowerCase();
+    const dbUrl = process.env.DATABASE_URL;
 
-    // Verify against configured Admin credentials
-    const isDirectAdmin = trimmedEmail === expectedEmail && String(password) === ADMIN_PASSWORD;
-
-    // Also attempt Better Auth sign-in verification
-    let betterAuthSuccess = false;
-    try {
-      const res = await auth.api.signInEmail({
-        body: {
-          email: trimmedEmail,
-          password: String(password),
-        },
-      });
-      betterAuthSuccess = Boolean(res);
-    } catch {
-      betterAuthSuccess = false;
+    if (!dbUrl || dbUrl.includes("npg_placeholder") || !dbUrl.startsWith("postgres")) {
+      return NextResponse.json(
+        { error: "Database not configured. Please check DATABASE_URL." },
+        { status: 500 }
+      );
     }
 
-    if (!isDirectAdmin && !betterAuthSuccess) {
-      return NextResponse.json({ error: "Invalid admin email or password" }, { status: 401 });
+    const sql = neon(dbUrl);
+
+    // Query Better Auth database user and credential account
+    const accounts = await sql`
+      SELECT u.id, u.email, u.role, u.name, a.password
+      FROM "user" u
+      JOIN "account" a ON a."userId" = u.id
+      WHERE LOWER(u.email) = LOWER(${trimmedEmail}) AND a."providerId" = 'credential'
+      LIMIT 1;
+    `;
+
+    if (!accounts || accounts.length === 0) {
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
-    const token = signAdminToken(trimmedEmail);
+    const userAccount = accounts[0];
+
+    // Verify hashed password using Better Auth's cryptographic verification
+    const isPasswordValid = await verifyPassword({
+      hash: userAccount.password,
+      password: String(password),
+    });
+
+    if (!isPasswordValid) {
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+    }
+
+    // Role check: Only users with role === 'admin' can access admin console
+    // Normal users created via client signup have role === 'client' and are strictly rejected
+    if (userAccount.role !== "admin") {
+      return NextResponse.json(
+        { error: "Access denied. Your account does not have administrator privileges." },
+        { status: 403 }
+      );
+    }
+
+    // Sign secure admin token for verified admin user
+    const token = signAdminToken(userAccount.email);
 
     const response = NextResponse.json({
       success: true,
       message: "Authentication successful",
       user: {
-        email: trimmedEmail,
-        role: "admin",
+        id: userAccount.id,
+        email: userAccount.email,
+        name: userAccount.name,
+        role: userAccount.role,
       },
     });
 

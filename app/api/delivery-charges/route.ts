@@ -1,5 +1,6 @@
 import { getStore } from "@/app/lib/store";
 import { NextResponse } from "next/server";
+import { isAdminRequest } from "@/app/lib/admin-auth";
 
 export async function GET() {
   try {
@@ -13,6 +14,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    if (!isAdminRequest(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await request.json();
     if (!body.city || body.amount === undefined) {
       return NextResponse.json({ error: "City and amount are required" }, { status: 400 });

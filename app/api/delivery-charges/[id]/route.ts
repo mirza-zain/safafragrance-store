@@ -1,5 +1,6 @@
 import { getStore } from "@/app/lib/store";
 import { NextResponse } from "next/server";
+import { isAdminRequest } from "@/app/lib/admin-auth";
 
 type RouteProps = {
   params: Promise<{ id: string }>;
@@ -7,6 +8,9 @@ type RouteProps = {
 
 export async function PATCH(request: Request, { params }: RouteProps) {
   try {
+    if (!isAdminRequest(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { id } = await params;
     const body = await request.json();
     const store = getStore();
@@ -25,6 +29,9 @@ export async function PATCH(request: Request, { params }: RouteProps) {
 
 export async function DELETE(request: Request, { params }: RouteProps) {
   try {
+    if (!isAdminRequest(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { id } = await params;
     const store = getStore();
     const deleted = store.deleteDeliveryCharge(Number(id));

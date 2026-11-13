@@ -1,5 +1,6 @@
 import { getStore } from "@/app/lib/store";
 import { NextResponse } from "next/server";
+import { isAdminRequest } from "@/app/lib/admin-auth";
 
 export async function GET() {
   try {
@@ -14,6 +15,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    if (!isAdminRequest(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await req.json();
     const { featuredProductIds } = body;
     if (!Array.isArray(featuredProductIds)) {
@@ -27,5 +31,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to update featured products" }, { status: 500 });
   }
 }
-
 

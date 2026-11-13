@@ -101,8 +101,8 @@ export default function Safa3DHero() {
     // MASTER BOTTLE STAGE GROUP
     // -----------------------------------------------------------------------
     const masterStage = new THREE.Group();
-    masterStage.position.set(0, -0.15, 0);
-    const initialScale = isMobile ? 0.62 : 0.78;
+    masterStage.position.set(0, -0.08, 0);
+    const initialScale = isMobile ? 0.68 : 0.84;
     masterStage.scale.set(initialScale, initialScale, initialScale);
     scene.add(masterStage);
 
@@ -398,7 +398,7 @@ export default function Safa3DHero() {
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
 
-        const targetHeight = 4.8;
+        const targetHeight = 5.15;
         const s = targetHeight / (size.y || 1);
         gltf.scene.scale.set(s, s, s);
         gltf.scene.position.set(-center.x * s, -center.y * s + 0.15, -center.z * s);
@@ -488,7 +488,7 @@ export default function Safa3DHero() {
     modelPivot.add(sprayPoints);
 
     // -----------------------------------------------------------------------
-    // FLYING ROSE PETALS ALL AROUND THE SITE (Cinematic 3D Swarm)
+    // ETHEREAL CHERRY BLOSSOM & ROSE PETAL SWARM (Sakura Luxury Drift)
     // -----------------------------------------------------------------------
     interface FlyingPetalData {
       mesh: THREE.Mesh;
@@ -498,63 +498,115 @@ export default function Safa3DHero() {
       phase: number;
       swaySpeed: number;
       swayAmp: number;
+      flutterFreq: number;
     }
 
     const flyingPetals: FlyingPetalData[] = [];
     const flyingPetalsGroup = new THREE.Group();
     scene.add(flyingPetalsGroup);
 
-    // Curved organic 3D rose petal geometry (gentle natural petal curvature)
-    const createPetalGeometry = (w = 0.28, l = 0.38, curv = 0.08) => {
-      const geo = new THREE.PlaneGeometry(w, l, 6, 6);
+    // Sculpted organic cherry blossom petal with natural notched tip & soft curl
+    const createSakuraPetalGeometry = (w = 0.26, l = 0.36) => {
+      const segX = 10;
+      const segY = 12;
+      const geo = new THREE.PlaneGeometry(w, l, segX, segY);
       const pos = geo.attributes.position;
+
       for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i) / (w * 0.5);
-        const y = pos.getY(i) / (l * 0.5);
-        // Realistic teardrop/cup shaped petal taper
-        const taper = Math.max(0.0, 1.0 - y * 0.35);
-        pos.setX(i, pos.getX(i) * taper);
-        const cup = (1.0 - x * x) * Math.sin((y * 0.5 + 0.5) * Math.PI);
-        pos.setZ(i, -cup * curv);
+        let x = pos.getX(i);
+        let y = pos.getY(i);
+
+        // Normalized [-1, 1]
+        const nx = x / (w * 0.5);
+        const ny = y / (l * 0.5);
+
+        // Gentle petal contour: rounded spade profile tapering to base (ny = -1)
+        // With an iconic subtle Sakura petal heart-cleft notch at the very tip (ny > 0.8)
+        let widthScale = Math.sin((ny * 0.5 + 0.5) * Math.PI * 0.85);
+        if (ny > 0.75) {
+          const notch = (1.0 - Math.abs(nx * 1.8)) * 0.12 * Math.max(0, (ny - 0.75) / 0.25);
+          y -= notch * (l * 0.5);
+        }
+
+        x *= Math.max(0.12, widthScale);
+        pos.setX(i, x);
+        pos.setY(i, y);
+
+        // Delicate 3D petal bowl cup & wavy edge curl
+        const cup = (1.0 - nx * nx) * Math.sin((ny * 0.5 + 0.5) * Math.PI) * 0.055;
+        const wave = Math.sin(nx * 4.0) * 0.012;
+        pos.setZ(i, -cup + wave);
       }
+
       geo.computeVertexNormals();
       return geo;
     };
 
-    const petalGeo = createPetalGeometry(0.28, 0.38, 0.08);
+    const sakuraPetalGeo = createSakuraPetalGeometry(0.25, 0.35);
 
-    // Natural Soft Rose Petal Materials (Soft Pink, Blush Rose & Delicate Ivory)
-    const petalMaterials = [
-      new THREE.MeshStandardMaterial({
-        color: new THREE.Color(0xf48fb1), // Soft Blush Pink
-        roughness: 0.55,
-        metalness: 0.01,
+    // Ethereal translucent cherry blossom palette:
+    // Soft pastel Sakura pink, delicate blush petal, warm mother-of-pearl ivory
+    const sakuraMaterials = [
+      new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(0xfbcfe8), // Soft Sakura pastel pink
+        roughness: 0.35,
+        metalness: 0.0,
+        clearcoat: 0.6,
+        clearcoatRoughness: 0.25,
+        transmission: 0.25, // Translucent petal backlit glow
+        ior: 1.45,
+        transparent: true,
+        opacity: 0.92,
         side: THREE.DoubleSide,
       }),
-      new THREE.MeshStandardMaterial({
-        color: new THREE.Color(0xe57373), // Gentle Rose Coral
-        roughness: 0.52,
-        metalness: 0.01,
+      new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(0xf472b6), // Radiant blush cherry blossom
+        roughness: 0.38,
+        metalness: 0.0,
+        clearcoat: 0.5,
+        clearcoatRoughness: 0.25,
+        transmission: 0.20,
+        ior: 1.45,
+        transparent: true,
+        opacity: 0.90,
         side: THREE.DoubleSide,
       }),
-      new THREE.MeshStandardMaterial({
-        color: new THREE.Color(0xfff3e0), // Soft Ivory Petal
-        roughness: 0.45,
-        metalness: 0.01,
+      new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(0xfdf2f8), // Gentle pale ivory-pink blossom
+        roughness: 0.32,
+        metalness: 0.0,
+        clearcoat: 0.7,
+        clearcoatRoughness: 0.20,
+        transmission: 0.30,
+        ior: 1.45,
+        transparent: true,
+        opacity: 0.88,
+        side: THREE.DoubleSide,
+      }),
+      new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(0xfecdd3), // Warm rose-tinted blossom
+        roughness: 0.36,
+        metalness: 0.0,
+        clearcoat: 0.6,
+        clearcoatRoughness: 0.25,
+        transmission: 0.22,
+        ior: 1.45,
+        transparent: true,
+        opacity: 0.91,
         side: THREE.DoubleSide,
       }),
     ];
 
-    const petalCount = 18; // Clean, elegant count - not too crowded
+    const petalCount = 42; // A fuller drift that remains soft around the flacon
     for (let i = 0; i < petalCount; i++) {
-      const mat = petalMaterials[i % petalMaterials.length];
-      const pMesh = new THREE.Mesh(petalGeo, mat);
-      const scaleRand = 0.65 + Math.random() * 0.45;
+      const mat = sakuraMaterials[i % sakuraMaterials.length];
+      const pMesh = new THREE.Mesh(sakuraPetalGeo, mat);
+      const scaleRand = 0.62 + Math.random() * 0.58;
       pMesh.scale.set(scaleRand, scaleRand, scaleRand);
 
-      const x = (Math.random() - 0.5) * 14.0;
-      const y = (Math.random() - 0.5) * 8.0;
-      const z = -2.0 + Math.random() * 5.0;
+      const x = (Math.random() - 0.5) * 15.0;
+      const y = (Math.random() - 0.5) * 9.0;
+      const z = -2.5 + Math.random() * 6.5;
       pMesh.position.set(x, y, z);
       pMesh.rotation.set(
         Math.random() * Math.PI * 2,
@@ -568,18 +620,19 @@ export default function Safa3DHero() {
         mesh: pMesh,
         pos: pMesh.position,
         vel: new THREE.Vector3(
-          0,
-          -0.0025 - Math.random() * 0.0035, // Very slow, graceful falling speed
+          0.0015 + Math.random() * 0.003, // Gentle horizontal breeze drift
+          -0.0032 - Math.random() * 0.0042, // Slow, graceful falling speed
           0
         ),
         rotVel: new THREE.Vector3(
-          (Math.random() - 0.5) * 0.008,
-          (Math.random() - 0.5) * 0.010,
-          (Math.random() - 0.5) * 0.006
+          (Math.random() - 0.5) * 0.012,
+          (Math.random() - 0.5) * 0.015,
+          (Math.random() - 0.5) * 0.008
         ),
         phase: Math.random() * Math.PI * 2,
-        swaySpeed: 0.4 + Math.random() * 0.5, // Slow gentle swaying
-        swayAmp: 0.004 + Math.random() * 0.005,
+        swaySpeed: 0.65 + Math.random() * 0.85, // Gentle pendulum fluttering
+        swayAmp: 0.009 + Math.random() * 0.009,
+        flutterFreq: 1.4 + Math.random() * 1.8,
       });
     }
 
@@ -666,7 +719,7 @@ export default function Safa3DHero() {
       camera.position.z = mobile ? 10.4 : 8.6;
       camera.updateProjectionMatrix();
 
-      const scale = mobile ? 0.62 : 0.78;
+      const scale = mobile ? 0.68 : 0.84;
       masterStage.scale.set(scale, scale, scale);
 
       renderer.setSize(w, h);
@@ -678,13 +731,14 @@ export default function Safa3DHero() {
     // -----------------------------------------------------------------------
     // MAIN REAL-TIME 60FPS PHYSICS & ANIMATION LOOP
     // -----------------------------------------------------------------------
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
     const tempVec = new THREE.Vector3();
 
     const animate = () => {
       animFrameId.current = requestAnimationFrame(animate);
-      const delta = clock.getDelta();
-      const elapsedTime = clock.getElapsedTime();
+      timer.update();
+      const delta = timer.getDelta();
+      const elapsedTime = timer.getElapsed();
 
       // Smooth physics Lerp interpolation for rotation
       currentRot.current.x += (targetRot.current.x - currentRot.current.x) * 0.06;
@@ -772,34 +826,36 @@ export default function Safa3DHero() {
         posAttr.needsUpdate = true;
       }
 
-      // Flying rose petals physics across the entire screen
+      // Flying cherry blossom / rose petals physics across the entire screen
       for (let i = 0; i < petalCount; i++) {
         const fp = flyingPetals[i];
-        // Continuous downward flutter
+        // Continuous gentle downward flutter + slight horizontal breeze drift
         fp.pos.y += fp.vel.y;
-        // Organic horizontal and depth sways
+        fp.pos.x += fp.vel.x;
+
+        // Realistic leaf/petal oscillatory tumbling and swinging
         fp.pos.x += Math.sin(elapsedTime * fp.swaySpeed + fp.phase) * fp.swayAmp;
-        fp.pos.z += Math.cos(elapsedTime * fp.swaySpeed * 0.8 + fp.phase) * (fp.swayAmp * 0.7);
+        fp.pos.z += Math.cos(elapsedTime * fp.swaySpeed * 0.75 + fp.phase) * (fp.swayAmp * 0.85);
 
-        // 3D tumbling rotation
-        fp.mesh.rotation.x += fp.rotVel.x;
+        // Natural tumbling rotations around pitch, yaw and roll
+        fp.mesh.rotation.x += fp.rotVel.x + Math.sin(elapsedTime * fp.flutterFreq) * 0.005;
         fp.mesh.rotation.y += fp.rotVel.y;
-        fp.mesh.rotation.z += fp.rotVel.z;
+        fp.mesh.rotation.z += fp.rotVel.z + Math.cos(elapsedTime * fp.flutterFreq) * 0.004;
 
-        // Interactive breeze reaction from mouse/touch movement
+        // Interactive gentle breeze reaction from mouse/touch movement
         if (pointerDelta.current.x !== 0 || pointerDelta.current.y !== 0) {
-          fp.pos.x += pointerDelta.current.x * 0.12;
+          fp.pos.x += pointerDelta.current.x * 0.14;
           fp.pos.y += pointerDelta.current.y * 0.08;
         }
 
-        // Seamless infinite wrap-around
-        if (fp.pos.y < -4.6) {
-          fp.pos.y = 4.8;
+        // Seamless infinite wrap-around across viewport
+        if (fp.pos.y < -4.8) {
+          fp.pos.y = 5.0;
           fp.pos.x = (Math.random() - 0.5) * 16.0;
           fp.pos.z = -2.5 + Math.random() * 7.5;
         }
-        if (fp.pos.x < -8.8) fp.pos.x = 8.8;
-        if (fp.pos.x > 8.8) fp.pos.x = -8.8;
+        if (fp.pos.x < -9.0) fp.pos.x = 9.0;
+        if (fp.pos.x > 9.0) fp.pos.x = -9.0;
       }
 
       renderer.render(scene, camera);
@@ -820,8 +876,8 @@ export default function Safa3DHero() {
       window.removeEventListener("touchend", onPointerUpHandler);
       window.removeEventListener("resize", handleResize);
 
-      petalGeo.dispose();
-      petalMaterials.forEach((m) => m.dispose());
+      sakuraPetalGeo.dispose();
+      sakuraMaterials.forEach((m) => m.dispose());
 
       if (mount && renderer.domElement) {
         mount.removeChild(renderer.domElement);
@@ -859,28 +915,28 @@ export default function Safa3DHero() {
           <div className="max-w-[280px] lg:max-w-xs flex flex-col items-start text-left space-y-3">
             <div className="flex items-center gap-2 text-[#b39b66] text-[10px] lg:text-[11px] uppercase tracking-[0.35em] font-mono font-medium">
               <span className="w-6 h-[1px] bg-[#b39b66]" />
-              RÉSERVE PRIVÉE
+              THE SAFA SIGNATURE
             </div>
             <h1 className="text-3xl lg:text-5xl font-serif text-[#0e281d] leading-[1.08] font-[Galsod] uppercase tracking-wide">
-              Crafted for<br />
-              <span className="text-[#b39b66] italic font-normal font-serif lowercase">distinction.</span>
+              A signature<br />
+              <span className="text-[#b39b66] italic font-normal font-serif lowercase">made personal.</span>
             </h1>
             <p className="text-xs text-[#5a6b63] tracking-wider leading-relaxed font-sans pt-1">
-              Hand-decanted perfume extract steeped in heavy optical crystal, crowned with 18K royal gold.
+              Concentrated extrait de parfum, composed for a lasting impression and a refined, unmistakable presence.
             </p>
           </div>
 
           {/* Right Flank: Concentration & Brand Notes */}
           <div className="max-w-[280px] lg:max-w-xs flex flex-col items-end text-right space-y-3">
             <div className="flex items-center gap-2 text-[#b39b66] text-[10px] lg:text-[11px] uppercase tracking-[0.35em] font-mono font-medium">
-              HAUTE PARFUMERIE
+              EXTRAIT DE PARFUM
               <span className="w-6 h-[1px] bg-[#b39b66]" />
             </div>
             <h2 className="text-3xl lg:text-4xl font-serif text-[#0e281d] leading-none font-[Galsod] uppercase tracking-wide">
-              35% Pure Oil
+              Warm. Refined.<br />Unmistakably yours.
             </h2>
             <p className="text-xs text-[#b39b66] tracking-[0.3em] uppercase font-mono">
-              EXTRAIT DE PARFUM
+              CONCENTRATED WITH INTENTION
             </p>
           </div>
         </div>
@@ -889,10 +945,10 @@ export default function Safa3DHero() {
         <div className="md:hidden flex flex-col justify-between items-center text-center h-full py-4">
           <div className="pt-2 space-y-1">
             <span className="text-[10px] tracking-[0.35em] uppercase text-[#b39b66] font-mono font-medium">
-              — SAFA HAUTE PARFUMERIE —
+              — SAFA FRAGRANCE —
             </span>
             <h1 className="text-2xl sm:text-3xl font-serif text-[#0e281d] uppercase font-[Galsod] tracking-wide">
-              Crafted for <span className="text-[#b39b66] italic font-normal">Distinction</span>
+              A signature <span className="text-[#b39b66] italic font-normal">made personal</span>
             </h1>
           </div>
         </div>

@@ -2,24 +2,24 @@ import { Star } from "lucide-react";
 
 const reviews = [
   {
-    quote: "Oud Maracuja has the kind of dry-down people ask about. It opens bright with passionfruit, then settles into something warm, smoky, and quietly luxurious.",
+    quote: "It opens fresh, then settles into a warm and quietly luxurious dry-down. The kind of scent that feels polished without trying too hard.",
     name: "Hassan R.",
-    detail: "Oud Maracuja • Extrait",
+    detail: "A warm, confident impression",
   },
   {
-    quote: "Pink Poison is playful without being too sweet. I wore it to a brunch and ended up taking the bottle along for the evening because the scent stayed soft and noticeable all day.",
+    quote: "Soft, elegant, and easy to wear. It has a gentle sweetness at first, followed by a clean floral warmth that stays close and beautiful.",
     name: "Areeba M.",
-    detail: "Pink Poison • Edition 01",
+    detail: "A soft floral impression",
   },
   {
-    quote: "Executive feels polished from the first spray. It has a clean, confident cedar-bergamot edge that works especially well for corporate meetings.",
+    quote: "There is something reassuring about this fragrance from the first spray. Clean woods, a little brightness, and a finish that feels quietly assured.",
     name: "Usman K.",
-    detail: "Executive • Signature",
+    detail: "A refined woody impression",
   },
   {
-    quote: "Maverick is my everyday choice now. Fresh, bold and easy to wear, with magnetic energy and enough artisanal character to feel like its own signature.",
+    quote: "Fresh enough for the day, deep enough for the evening. It feels effortless, memorable, and personal rather than overwhelming.",
     name: "Bilal A.",
-    detail: "Maverick • Eau de Parfum",
+    detail: "An effortless everyday impression",
   },
 ];
 
@@ -30,14 +30,14 @@ export default function Reviews() {
         <div className="mb-12 flex flex-col items-center justify-between gap-4 text-center sm:mb-16 md:flex-row md:items-end md:text-left">
           <div>
             <p className="mb-2 text-xs uppercase tracking-[0.3em] font-semibold text-[#b39b66]">
-              Patron Notes
+              Scent Impressions
             </p>
             <h2 id="reviews-heading" className="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-wider text-[#0e281d] font-[Galsod]">
-              Loved for the last note
+              Made to leave a feeling
             </h2>
           </div>
           <p className="max-w-sm text-sm leading-relaxed text-neutral-700 sm:text-base font-normal">
-            Reflections from patrons who made these artisanal scents part of their daily ritual.
+            A few words that capture the mood of a Safa fragrance: warm, considered, and quietly memorable.
           </p>
         </div>
 

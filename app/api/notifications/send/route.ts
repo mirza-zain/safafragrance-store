@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { broadcastNotification, getAllSubscriptions, PushPayload } from "@/app/lib/web-push";
+import { isAdminRequest } from "@/app/lib/admin-auth";
 
 export async function POST(request: Request) {
   try {
+    if (!isAdminRequest(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await request.json();
 
     const payload: PushPayload = {

@@ -43,10 +43,10 @@ export default function Home() {
       <section className="w-full px-4 sm:px-8 py-10 sm:py-16 max-w-5xl mx-auto text-center">
         <div className="py-10 sm:py-12 border-y border-[#e7decb] space-y-3">
           <p className="text-[11px] uppercase tracking-[0.3em] font-semibold text-[#b39b66]">
-            Artisanal Precision • Pure Oil Extract
+            Thoughtful composition • Concentrated extrait
           </p>
           <blockquote className="text-xl sm:text-2xl md:text-3xl font-normal text-[#0e281d] font-[Galsod] uppercase tracking-wide max-w-2xl mx-auto leading-relaxed">
-            &ldquo;A fragrance should never announce itself loudly, but linger indelibly.&rdquo;
+            &ldquo;The right fragrance becomes part of the way you are remembered.&rdquo;
           </blockquote>
         </div>
       </section>

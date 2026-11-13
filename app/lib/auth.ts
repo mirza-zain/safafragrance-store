@@ -8,7 +8,7 @@ const isConfiguredDb =
   Boolean(dbUrl?.startsWith("postgres"));
 
 export const auth = betterAuth({
-  secret: process.env.BETTER_AUTH_SECRET || "safa-fragrance-better-auth-secret-key-2026-786",
+  secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   ...(isConfiguredDb
     ? {
@@ -25,7 +25,7 @@ export const auth = betterAuth({
       role: {
         type: "string",
         required: false,
-        defaultValue: "admin",
+        defaultValue: "client",
       },
     },
   },

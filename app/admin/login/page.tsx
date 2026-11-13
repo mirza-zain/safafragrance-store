@@ -4,13 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Sparkles } from "lucide-react";
+import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle } from "lucide-react";
 import logo from "@/public/logo.png";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@safa.com");
-  const [password, setPassword] = useState("@Safa,786");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,12 +41,6 @@ export default function AdminLoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillAdminCredentials = () => {
-    setEmail("admin@safa.com");
-    setPassword("@Safa,786");
-    setError(null);
   };
 
   return (
@@ -96,7 +90,8 @@ export default function AdminLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@safa.com"
+                placeholder="Enter admin email"
+                autoComplete="email"
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-neutral-300 focus:border-[#1b4431] focus:ring-1 focus:ring-[#1b4431] text-sm text-neutral-900 bg-neutral-50/50 outline-none transition"
               />
             </div>
@@ -114,6 +109,7 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="current-password"
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-neutral-300 focus:border-[#1b4431] focus:ring-1 focus:ring-[#1b4431] text-sm text-neutral-900 bg-neutral-50/50 outline-none transition"
               />
             </div>
@@ -137,26 +133,14 @@ export default function AdminLoginPage() {
           </div>
         </form>
 
-        {/* Quick Fill Helper */}
-        <div className="mt-5 pt-5 border-t border-neutral-100 flex flex-col gap-2.5">
-          <button
-            type="button"
-            onClick={fillAdminCredentials}
-            className="w-full py-2 px-3 rounded-lg border border-[#e7decb] bg-[#faf7f2]/70 hover:bg-[#f2ece2] text-[11px] font-medium text-[#1b4431] flex items-center justify-center gap-1.5 transition"
-          >
-            <Sparkles size={13} className="text-[#b39b66]" />
-            <span>Use Default Credentials (admin@safa.com)</span>
-          </button>
-
-          <div className="flex items-center justify-between text-[11px] text-neutral-500 pt-1">
-            <span className="flex items-center gap-1">
-              <ShieldCheck size={13} className="text-emerald-600" />
-              <span>Neon PostgreSQL Protected</span>
-            </span>
-            <Link href="/" className="hover:text-neutral-900 underline transition">
-              Back to Store
-            </Link>
-          </div>
+        <div className="mt-5 pt-5 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-500">
+          <span className="flex items-center gap-1">
+            <ShieldCheck size={13} className="text-emerald-600" />
+            <span>Encrypted Admin Access</span>
+          </span>
+          <Link href="/" className="hover:text-neutral-900 underline transition">
+            Back to Store
+          </Link>
         </div>
       </div>
     </div>

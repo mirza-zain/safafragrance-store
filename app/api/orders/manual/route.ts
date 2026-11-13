@@ -1,9 +1,13 @@
 import { getStore } from "@/app/lib/store";
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
+import { isAdminRequest } from "@/app/lib/admin-auth";
 
 export async function POST(request: Request) {
   try {
+    if (!isAdminRequest(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await request.json();
 
     const {

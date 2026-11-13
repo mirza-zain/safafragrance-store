@@ -9,10 +9,10 @@ import { CartProvider } from "../context/CartContext";
 
 export const metadata: Metadata = {
   title: {
-    default: "Safa Fragrance | Haute Parfumerie & Artisanal Extrait",
+    default: "Safa Fragrance | Concentrated Extrait de Parfum",
     template: "%s | Safa Fragrance",
   },
-  description: "Explore exquisite artisanal Extrait de Parfum formulations from Safa Fragrance. Handcrafted with rare oud, Taif rose, and precious resins for commanding presence and 14+ hour longevity.",
+  description: "Discover Safa Fragrance: concentrated extrait de parfum composed with luminous openings, rich woods, and warm resins for a personal, lasting signature.",
   keywords: ["Safa Fragrance", "luxury perfume", "Extrait de Parfum", "Pakistan perfumes", "Oud", "Taif Rose", "Amber", "Haute Parfumerie"],
   icons: {
     icon: "/logo.png",

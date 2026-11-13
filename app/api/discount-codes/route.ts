@@ -1,5 +1,6 @@
 import { getStore } from "@/app/lib/store";
 import { NextResponse } from "next/server";
+import { isAdminRequest } from "@/app/lib/admin-auth";
 
 export async function GET() {
   try {
@@ -13,6 +14,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    if (!isAdminRequest(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await request.json();
     if (!body.code || !body.value) {
       return NextResponse.json({ error: "Code and value are required" }, { status: 400 });
@@ -35,4 +39,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create discount code" }, { status: 500 });
   }
 }
-

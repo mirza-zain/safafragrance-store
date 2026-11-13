@@ -1,5 +1,6 @@
 import { getStore } from "@/app/lib/store";
 import { NextResponse } from "next/server";
+import { isAdminRequest } from "@/app/lib/admin-auth";
 
 type RouteProps = {
   params: Promise<{ id: string }>;
@@ -24,6 +25,9 @@ export async function GET(request: Request, { params }: RouteProps) {
 
 export async function PUT(request: Request, { params }: RouteProps) {
   try {
+    if (!isAdminRequest(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { id } = await params;
     const body = await request.json();
     const store = getStore();
@@ -42,6 +46,9 @@ export async function PUT(request: Request, { params }: RouteProps) {
 
 export async function DELETE(request: Request, { params }: RouteProps) {
   try {
+    if (!isAdminRequest(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { id } = await params;
     const store = getStore();
     const deleted = store.deleteProduct(Number(id));
@@ -56,4 +63,3 @@ export async function DELETE(request: Request, { params }: RouteProps) {
     return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
   }
 }
-
