@@ -44,11 +44,14 @@ function ShowcaseCard({ product, index }: ShowcaseCardProps) {
   const activeVariant = hasVariants ? variants[selectedVariantIndex] || variants[0] : null;
   const currentPrice = activeVariant ? (Number(activeVariant.price) || product.price) : Number(product.price);
   const activeStock = activeVariant ? activeVariant.stock : Number(product.stock);
+  const isOutOfStock = activeStock <= 0;
 
   // Add to Bag feedback state
   const [added, setAdded] = useState(false);
 
   const handleAddToCart = () => {
+    if (isOutOfStock) return;
+
     addToCart(
       {
         id: product.id,
@@ -112,7 +115,10 @@ function ShowcaseCard({ product, index }: ShowcaseCardProps) {
                     type="button"
                     role="radio"
                     aria-checked={isSelected}
-                    onClick={() => setSelectedVariantIndex(i)}
+                    onClick={() => {
+                      setSelectedVariantIndex(i);
+                      setAdded(false);
+                    }}
                     className={`flex-1 rounded-md border py-2 text-[12px] font-semibold uppercase tracking-wider transition ${
                       isSelected
                         ? "border-brand-dark bg-brand-dark text-white"
@@ -131,14 +137,17 @@ function ShowcaseCard({ product, index }: ShowcaseCardProps) {
           <button
             type="button"
             onClick={handleAddToCart}
+            disabled={isOutOfStock}
             className={`mt-4 flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border-2 px-3 text-[11px] font-bold uppercase tracking-wider transition ${
-              added
+              isOutOfStock
+                ? "cursor-not-allowed border-neutral-300 bg-neutral-100 text-neutral-500"
+                : added
                 ? "border-[#1b4431] bg-[#1b4431] text-white"
                 : "border-brand bg-transparent text-brand-dark hover:bg-brand hover:text-white"
             }`}
-            aria-label={`Add ${product.name} to cart`}
+            aria-label={isOutOfStock ? `${product.name} is out of stock` : `Add ${product.name} to cart`}
           >
-            {added ? <><Check className="size-3.5" /> Added to Cart</> : <><ShoppingBag className="size-3.5" /> Add to Cart</>}
+            {isOutOfStock ? "Out of Stock" : added ? <><Check className="size-3.5" /> Added to Cart</> : <><ShoppingBag className="size-3.5" /> Add to Cart</>}
           </button>
         </div>
       </article>
