@@ -1,4 +1,4 @@
-import { getStore } from "@/app/lib/store";
+import { deleteNeonDiscount, toggleNeonDiscount } from "@/app/lib/neon-commerce";
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/app/lib/admin-auth";
 
@@ -13,8 +13,7 @@ export async function PATCH(request: Request, { params }: RouteProps) {
     }
     const { id } = await params;
     const body = await request.json();
-    const store = getStore();
-    const updated = store.toggleDiscount(Number(id), body.active);
+    const updated = await toggleNeonDiscount(Number(id), body.active);
 
     if (!updated) {
       return NextResponse.json({ error: "Discount not found" }, { status: 404 });
@@ -33,8 +32,7 @@ export async function DELETE(request: Request, { params }: RouteProps) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const { id } = await params;
-    const store = getStore();
-    const deleted = store.deleteDiscount(Number(id));
+    const deleted = await deleteNeonDiscount(Number(id));
 
     if (!deleted) {
       return NextResponse.json({ error: "Discount not found" }, { status: 404 });

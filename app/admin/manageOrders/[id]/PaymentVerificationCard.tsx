@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Check, X, ExternalLink, ShieldCheck, AlertCircle } from "lucide-react";
+import { Check, X, ExternalLink, AlertCircle } from "lucide-react";
 
 type Props = {
   orderId: number;
@@ -115,7 +115,13 @@ export default function PaymentVerificationCard({
                 onClick={() => setModalOpen(true)}
                 className="relative size-20 rounded-xl overflow-hidden border border-neutral-300 bg-white group shrink-0"
               >
-                <Image src={paymentReceipt} alt="Receipt proof" fill className="object-cover group-hover:scale-105 transition" />
+                <Image
+                  src={paymentReceipt}
+                  alt="Receipt proof"
+                  fill
+                  sizes="80px"
+                  className="object-cover group-hover:scale-105 transition"
+                />
               </button>
               <div className="space-y-1">
                 <p className="text-xs font-bold text-neutral-900">Payment Screenshot Uploaded</p>
@@ -173,7 +179,13 @@ export default function PaymentVerificationCard({
               </button>
             </div>
             <div className="relative h-96 w-full rounded-xl overflow-hidden bg-neutral-100">
-              <Image src={paymentReceipt} alt="Proof" fill className="object-contain" />
+              <Image
+                src={paymentReceipt}
+                alt="Proof"
+                fill
+                sizes="(max-width: 640px) 100vw, 672px"
+                className="object-contain"
+              />
             </div>
           </div>
         </div>

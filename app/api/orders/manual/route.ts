@@ -1,7 +1,8 @@
-import { getStore } from "@/app/lib/store";
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { isAdminRequest } from "@/app/lib/admin-auth";
+import { createNeonOrder, updateNeonOrder } from "@/app/lib/neon-commerce";
+import { getNeonProduct as findNeonProduct, updateNeonProduct } from "@/app/lib/neon-products";
 
 export async function POST(request: Request) {
   try {
@@ -30,7 +31,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "At least one item is required" }, { status: 400 });
     }
 
-    const store = getStore();
     const parts = customerName.trim().split(" ");
     const firstName = parts[0] || "Customer";
     const lastName = parts.slice(1).join(" ") || "";
@@ -44,7 +44,14 @@ export async function POST(request: Request) {
     const prefix = channel === "instagram" ? "IG" : channel === "reference" ? "REF" : channel === "whatsapp" ? "WA" : "DIR";
     const trackingId = `${prefix}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 
-    const order = store.createOrder({
+    const productsById = new Map(
+      await Promise.all(items.map(async (item: { productId: number }) => {
+        const product = await findNeonProduct(Number(item.productId));
+        return [Number(item.productId), product] as const;
+      }))
+    );
+
+    const order = await createNeonOrder({
       firstName,
       lastName,
       email: email || "direct@safaperfumes.pk",
@@ -53,9 +60,10 @@ export async function POST(request: Request) {
       address: address || "Direct Sale",
       city: city || "Karachi",
       country: "Pakistan",
+      trackingId,
       notes: notes ? `[${channel.toUpperCase()}] ${notes}` : `[${channel.toUpperCase()}] Manual Sale`,
       items: items.map((it: { productId: number; variantLabel?: string; quantity: number; price: number }) => {
-        const prod = store.getProductById(Number(it.productId));
+        const prod = productsById.get(Number(it.productId));
         return {
           productId: Number(it.productId),
           productName: prod ? prod.name : `Fragrance #${it.productId}`,
@@ -75,7 +83,23 @@ export async function POST(request: Request) {
     });
 
     if (orderStatus !== "pending") {
-      store.updateOrderStatus(order.id, { status: orderStatus, trackingId });
+      await updateNeonOrder(order.id, { status: orderStatus });
+    }
+
+    for (const item of items as { productId: number; variantLabel?: string; quantity: number }[]) {
+      const product = productsById.get(Number(item.productId));
+      if (!product) continue;
+      const variants = product.variants?.map((variant) =>
+        variant.label === item.variantLabel
+          ? { ...variant, stock: Math.max(0, variant.stock - Number(item.quantity)) }
+          : variant
+      ) || [];
+      await updateNeonProduct(product.id, {
+        stock: variants.length > 0
+          ? variants.reduce((total, variant) => total + variant.stock, 0)
+          : Math.max(0, product.stock - Number(item.quantity)),
+        variants
+      });
     }
 
     return NextResponse.json(order, { status: 201 });

@@ -43,7 +43,6 @@ type ManualSaleModalProps = {
 
 export default function ManualSaleModal({ isOpen, onClose, onSuccess }: ManualSaleModalProps) {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,12 +51,12 @@ export default function ManualSaleModal({ isOpen, onClose, onSuccess }: ManualSa
   const [customerName, setCustomerName] = useState("");
   const [phoneNum, setPhoneNum] = useState("");
   const [city, setCity] = useState("Karachi");
-  const [address, setAddress] = useState("");
+  const [address] = useState("");
   const [notes, setNotes] = useState("");
   
   const [items, setItems] = useState<SelectedItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
-  const [paymentStatus, setPaymentStatus] = useState<"paid" | "pending">("paid");
+  const [paymentStatus] = useState<"paid" | "pending">("paid");
   const [orderStatus, setOrderStatus] = useState<"delivered" | "processing" | "pending">("delivered");
   const [saleDate, setSaleDate] = useState("2026-11-10");
   const [deliveryAmount, setDeliveryAmount] = useState<number>(0);
@@ -66,7 +65,6 @@ export default function ManualSaleModal({ isOpen, onClose, onSuccess }: ManualSa
   useEffect(() => {
     if (!isOpen) return;
     const fetchProducts = async () => {
-      setLoadingProducts(true);
       try {
         const res = await fetch("/api/product");
         if (!res.ok) throw new Error("Failed to load products");
@@ -87,13 +85,11 @@ export default function ManualSaleModal({ isOpen, onClose, onSuccess }: ManualSa
         }
       } catch (err) {
         console.error("Products fetch error:", err);
-      } finally {
-        setLoadingProducts(false);
       }
     };
 
     fetchProducts();
-  }, [isOpen]);
+  }, [isOpen, items.length]);
 
   if (!isOpen) return null;
 
@@ -477,7 +473,7 @@ export default function ManualSaleModal({ isOpen, onClose, onSuccess }: ManualSa
               <label className="block text-xs font-medium text-neutral-600 mb-1">Status</label>
               <select
                 value={orderStatus}
-                onChange={(e) => setOrderStatus(e.target.value as any)}
+                onChange={(e) => setOrderStatus(e.target.value as "delivered" | "processing" | "pending")}
                 className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-medium"
               >
                 <option value="delivered">Delivered / Completed</option>

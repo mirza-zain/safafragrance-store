@@ -1,4 +1,4 @@
-import { getStore } from "@/app/lib/store";
+import { deleteNeonOrder, getNeonOrder, updateNeonOrder } from "@/app/lib/neon-commerce";
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/app/lib/admin-auth";
 
@@ -12,8 +12,7 @@ export async function GET(request: Request, { params }: RouteProps) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const { id } = await params;
-    const store = getStore();
-    const order = store.getOrderById(Number(id));
+    const order = await getNeonOrder(Number(id));
 
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
@@ -33,8 +32,7 @@ export async function PATCH(request: Request, { params }: RouteProps) {
     }
     const { id } = await params;
     const body = await request.json();
-    const store = getStore();
-    const updated = store.updateOrderStatus(Number(id), body);
+    const updated = await updateNeonOrder(Number(id), body);
 
     if (!updated) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
@@ -53,8 +51,7 @@ export async function DELETE(request: Request, { params }: RouteProps) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const { id } = await params;
-    const store = getStore();
-    const deleted = store.deleteOrder(Number(id));
+    const deleted = await deleteNeonOrder(Number(id));
 
     if (!deleted) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
@@ -66,4 +63,3 @@ export async function DELETE(request: Request, { params }: RouteProps) {
     return NextResponse.json({ error: "Failed to delete order" }, { status: 500 });
   }
 }
-

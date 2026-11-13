@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, isAdminRequest } from "@/app/lib/admin-auth";
-import { auth } from "@/app/lib/auth";
+import { isAdminRequest } from "@/app/lib/admin-auth";
 
 /**
  * Helper to check if a valid Neon connection string is provided
@@ -34,13 +33,8 @@ export async function GET(request: Request) {
         "1. Create a free PostgreSQL database at https://console.neon.tech",
         "2. Copy your Connection String (e.g. postgresql://[user]:[password]@[endpoint].neon.tech/neondb?sslmode=require)",
         "3. Paste it as DATABASE_URL in .env.local",
-        "4. Call POST /api/neon to auto-initialize Better Auth tables and seed the admin user (admin@sufa.com)."
-      ],
-      adminCredentials: {
-        email: ADMIN_EMAIL,
-        password: "••••••••",
-        readyInFallback: true,
-      }
+        "4. Call POST /api/neon to auto-initialize Better Auth tables."
+      ]
     });
   }
 
@@ -78,7 +72,7 @@ export async function GET(request: Request) {
         const adminCheck = await sql`
           SELECT id, email, name, "createdAt" 
           FROM "user" 
-          WHERE LOWER(email) = LOWER(${ADMIN_EMAIL}) 
+          WHERE role = 'admin'
           LIMIT 1;
         `;
         adminFound = adminCheck.length > 0;
@@ -98,10 +92,9 @@ export async function GET(request: Request) {
       tables: tableNames,
       betterAuthTablesReady: hasAuthTables,
       adminSeeded: adminFound,
-      adminEmail: ADMIN_EMAIL,
       nextStep: hasAuthTables
         ? "Neon DB and Better Auth are fully operational."
-        : "Send a POST request to /api/neon to automatically create Better Auth tables and seed admin@sufa.com."
+        : "Send a POST request to /api/neon to automatically create Better Auth tables."
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -138,10 +131,6 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  if (!ADMIN_PASSWORD) {
-    return NextResponse.json({ error: "ADMIN_PASSWORD is not configured" }, { status: 500 });
-  }
-
   try {
     // 1. Create Better Auth Core Tables
     await sql`
@@ -198,30 +187,9 @@ export async function POST(request: Request) {
       );
     `;
 
-    // 2. Seed or update the Admin User in Better Auth
-    let seededViaBetterAuth = false;
-    try {
-      await auth.api.signUpEmail({
-        body: {
-          email: ADMIN_EMAIL,
-          password: ADMIN_PASSWORD,
-          name: "Safa Admin"
-        }
-      });
-      seededViaBetterAuth = true;
-    } catch {
-      // If user already exists or auth.api fails, check if user is already present
-      const existing = await sql`
-        SELECT id FROM "user" WHERE LOWER(email) = LOWER(${ADMIN_EMAIL}) LIMIT 1;
-      `;
-      seededViaBetterAuth = existing.length > 0;
-    }
-
     return NextResponse.json({
       success: true,
-      message: "Neon DB Better Auth tables verified and admin user initialized successfully.",
-      adminEmail: ADMIN_EMAIL,
-      adminSeeded: seededViaBetterAuth,
+      message: "Neon DB Better Auth tables verified successfully.",
       tables: ["user", "session", "account", "verification"]
     });
   } catch (error: unknown) {

@@ -43,8 +43,11 @@ export default function ManageOrders() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch("/api/orders");
-        if (!response.ok) throw new Error("Error Fetching Orders");
+        const response = await fetch("/api/orders", { cache: "no-store" });
+        if (!response.ok) {
+          const errJson = await response.json().catch(() => ({}));
+          throw new Error(errJson.error || "Error Fetching Orders");
+        }
         const data: Order[] = await response.json();
         setOrders(data);
         setLoading(false);
@@ -55,6 +58,8 @@ export default function ManageOrders() {
     };
 
     fetchOrders();
+    const refreshTimer = window.setInterval(fetchOrders, 10000);
+    return () => window.clearInterval(refreshTimer);
   }, []);
 
   if (loading) return (

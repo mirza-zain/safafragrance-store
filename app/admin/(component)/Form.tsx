@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from "react";
-import { CheckCircle2, AlertCircle, Upload, Plus, Trash2, Layers } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { CheckCircle2, AlertCircle, Upload, UploadCloud, Plus, Trash2, Layers, LoaderCircle, X } from "lucide-react";
 import Image from "next/image";
 
 export type ProductVariant = {
@@ -55,6 +55,16 @@ export default function Form({ product, onProductSaved }: FormProps) {
   const [serverError, setServerError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (selectedImagePreview) URL.revokeObjectURL(selectedImagePreview);
+    };
+  }, [selectedImagePreview]);
 
   function handleData(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     const { name, value } = event.target;
@@ -118,21 +128,48 @@ export default function Form({ product, onProductSaved }: FormProps) {
     }));
   }
 
-  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  function selectImage(file: File | undefined) {
     if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
+      setServerError("Only JPEG, PNG, WebP, and GIF images are allowed.");
+      return;
+    }
+    if (file.size === 0 || file.size > 5 * 1024 * 1024) {
+      setServerError("Image must be between 1 byte and 5 MB.");
+      return;
+    }
+    setServerError("");
+    setSuccessMessage("");
+    setSelectedImagePreview(URL.createObjectURL(file));
+    setSelectedImage(file);
+  }
 
+  function handleImageSelection(e: React.ChangeEvent<HTMLInputElement>) {
+    selectImage(e.target.files?.[0]);
+    e.target.value = "";
+  }
+
+  async function handleFileUpload() {
+    if (!selectedImage) return;
     setUploadingImage(true);
     try {
       const data = new FormData();
-      data.append("file", file);
+      data.append("file", selectedImage);
       const res = await fetch("/api/upload", { method: "POST", body: data });
-      if (res.ok) {
-        const json = await res.json();
-        setFormData(prev => ({ ...prev, image: json.url }));
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || "Failed to upload image");
       }
-    } catch {
-      setServerError("Failed to upload image");
+      if (typeof json.url !== "string" || !json.url) {
+        throw new Error("Upload succeeded but no image URL was returned");
+      }
+      setFormData(prev => ({ ...prev, image: json.url }));
+      setSelectedImage(null);
+      setSelectedImagePreview(null);
+      setIsUploadModalOpen(false);
+      setSuccessMessage("Image uploaded. You can now publish the fragrance.");
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : "Failed to upload image");
     } finally {
       setUploadingImage(false);
     }
@@ -146,6 +183,8 @@ export default function Form({ product, onProductSaved }: FormProps) {
     if (!formData.name.trim()) return setServerError("Product name is required.");
     if (!formData.description.trim()) return setServerError("Product description is required.");
     if (!formData.category) return setServerError("Please select a category.");
+    if (uploadingImage) return setServerError("Please wait for the image upload to finish.");
+    if (selectedImage) return setServerError("Please click Upload Image before publishing.");
 
     const useVariants = hasVariants && formData.variants.length > 0;
 
@@ -547,25 +586,27 @@ export default function Form({ product, onProductSaved }: FormProps) {
           <label className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-2">
             Fragrance Bottle Image
           </label>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-semibold rounded-xl border border-neutral-300 transition">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsUploadModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 bg-neutral-100 px-4 py-2.5 text-xs font-semibold text-neutral-800 transition hover:bg-neutral-200"
+            >
               <Upload className="size-4" />
-              <span>{uploadingImage ? "Uploading..." : "Upload Local Photo"}</span>
-              <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-            </label>
-
-            <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
-              <span className="text-xs text-neutral-400">or path:</span>
-              <input
-                type="text"
-                name="image"
-                value={formData.image}
-                onChange={handleData}
-                placeholder="/images/safaPerfume.png"
-                className="flex-1 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-black"
-              />
-            </div>
+              <span>{formData.image && !selectedImage ? "Change Image" : "Upload Image"}</span>
+            </button>
+            {selectedImage && !uploadingImage && (
+              <span className="text-xs text-amber-700">Upload the selected image before publishing.</span>
+            )}
+            {!selectedImage && formData.image && (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
+                <CheckCircle2 className="size-3.5" /> Image uploaded and ready
+              </span>
+            )}
           </div>
+          <p className="mt-2 text-[11px] text-neutral-500">
+            Upload a product image, then wait for the confirmation before publishing.
+          </p>
 
           {formData.image && (
             <div className="mt-4 flex items-center gap-3">
@@ -577,16 +618,103 @@ export default function Form({ product, onProductSaved }: FormProps) {
                   className="object-cover"
                 />
               </div>
-              <span className="text-xs text-neutral-500">Image preview active</span>
+              <span className="text-xs text-neutral-500">Current image preview</span>
             </div>
           )}
         </div>
+
+        {isUploadModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/60 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="upload-image-title"
+          >
+            <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
+                <div>
+                  <h2 id="upload-image-title" className="text-sm font-bold text-neutral-900">Upload product image</h2>
+                  <p className="mt-1 text-xs text-neutral-500">Choose an image from your device or drag it here.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsUploadModalOpen(false)}
+                  disabled={uploadingImage}
+                  className="rounded-lg p-2 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+                  aria-label="Close upload dialog"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <div className="p-5">
+                <div
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setIsDraggingImage(true);
+                  }}
+                  onDragLeave={() => setIsDraggingImage(false)}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    setIsDraggingImage(false);
+                    selectImage(event.dataTransfer.files[0]);
+                  }}
+                  className={`flex min-h-64 flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition ${
+                    isDraggingImage
+                      ? "border-brand bg-brand/5"
+                      : "border-neutral-300 bg-neutral-50 hover:border-neutral-400"
+                  }`}
+                >
+                  {selectedImagePreview ? (
+                    <div className="flex w-full flex-col items-center gap-4">
+                      <div className="relative size-40 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xs">
+                        <Image src={selectedImagePreview} alt="Selected product preview" fill sizes="160px" className="object-contain" />
+                      </div>
+                      <p className="max-w-full truncate text-xs font-medium text-neutral-700">{selectedImage?.name}</p>
+                    </div>
+                  ) : (
+                    <>
+                      <UploadCloud className="size-12 text-neutral-400" />
+                      <p className="mt-4 text-sm font-medium text-neutral-600">Drag and drop your product image here</p>
+                      <span className="my-2 text-xs text-neutral-400">or</span>
+                    </>
+                  )}
+
+                  <label className="cursor-pointer rounded-lg bg-blue-600 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700">
+                    Browse files
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleImageSelection}
+                      className="hidden"
+                    />
+                  </label>
+                  <p className="mt-3 text-[11px] text-neutral-400">JPEG, PNG, WebP, or GIF up to 5 MB</p>
+                </div>
+
+                {serverError && (
+                  <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{serverError}</p>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleFileUpload}
+                  disabled={!selectedImage || uploadingImage}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {uploadingImage ? <LoaderCircle className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+                  {uploadingImage ? "Uploading... Please wait" : "Upload and use image"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Submit Button */}
         <div className="flex justify-end pt-2">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || uploadingImage || Boolean(selectedImage)}
             className="px-6 py-3 bg-black hover:bg-neutral-800 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition active:scale-[0.99] flex items-center gap-2 shadow-xs"
           >
             {isSubmitting ? (

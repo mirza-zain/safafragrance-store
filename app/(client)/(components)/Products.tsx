@@ -15,6 +15,7 @@ type ProductVariant = {
 type Product = {
   id: number;
   name: string;
+  tagline?: string;
   description: string;
   image: string;
   price: number;
@@ -126,7 +127,13 @@ export default function Products({ limit }: Props) {
 
       {/* Loading Skeleton */}
       {loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div
+          className={
+            products.length === 1
+              ? "flex justify-center"
+              : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+          }
+        >
           {[1, 2, 3, 4, 5, 6, 7, 8].slice(0, limit ?? 8).map((i) => (
             <div key={i} className="animate-pulse space-y-4">
               <div className="aspect-4/5 w-full rounded-2xl bg-neutral-200" />
@@ -156,7 +163,7 @@ export default function Products({ limit }: Props) {
             const selectedQuantity = cart.find((c) => c.id === item.id)?.quantity ?? 0;
 
             return (
-              <div className="w-full flex flex-col group" key={item.id}>
+              <div className={`w-full flex flex-col group ${products.length === 1 ? "max-w-md" : ""}`} key={item.id}>
                 <Link href={`/productDetail/${item.id}`} className="block flex-1">
                   <div className="relative aspect-4/5 w-full overflow-hidden rounded-2xl shadow-sm bg-[#faf7f2] border border-[#e7decb] transition-all duration-300 group-hover:shadow-lg group-hover:border-[#1b4431]">
                     {item.image ? (
@@ -174,12 +181,15 @@ export default function Products({ limit }: Props) {
                     )}
                   </div>
                   <p className="text-xs text-[#b39b66] uppercase tracking-widest mt-4 text-center font-semibold">
-                    Safa Fragrance ©
+                    Extrait de Parfum
                   </p>
                   <div className="flex flex-col justify-center items-center gap-1 mt-1 text-center">
                     <h3 className="text-base sm:text-lg font-bold text-neutral-900 group-hover:text-[#1b4431] transition font-sans tracking-wide">
                       {item.name}
                     </h3>
+                    {item.tagline && (
+                      <p className="text-xs text-neutral-500 line-clamp-1">{item.tagline}</p>
+                    )}
                     <p className="text-base sm:text-lg font-semibold text-[#1b4431]">
                       {item.variants?.length
                         ? `From Rs. ${minPrice.toLocaleString()}`

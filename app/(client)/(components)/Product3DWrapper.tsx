@@ -50,7 +50,7 @@ export default function Product3DWrapper({
   // Ambient idle breathing animation
   const isIdle = !isInteracting;
 
-  const updateMotion = useCallback(() => {
+  const updateMotion = useCallback(function tick() {
     // Lerp smoothing (0.10 for heavy luxury physics feel)
     currentX.current += (targetX.current - currentX.current) * 0.1;
     currentY.current += (targetY.current - currentY.current) * 0.1;
@@ -68,7 +68,7 @@ export default function Product3DWrapper({
       cardRef.current.style.boxShadow = `${shadowX}px ${shadowY}px ${shadowBlur}px -8px rgba(14, 40, 29, 0.22), 0 25px 50px -12px rgba(0, 0, 0, 0.18)`;
     }
 
-    frameId.current = requestAnimationFrame(updateMotion);
+    frameId.current = requestAnimationFrame(tick);
   }, [maxTilt, perspective]);
 
   useEffect(() => {

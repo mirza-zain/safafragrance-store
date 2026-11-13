@@ -81,7 +81,7 @@ export default function CartDrawer() {
                   className="bg-white rounded-2xl p-4 border border-[#e8dfcf] shadow-xs flex gap-3.5 items-center"
                 >
                   <div className="relative size-20 rounded-xl overflow-hidden bg-[#faf7f2] border border-[#eee6d7] shrink-0">
-                    <Image src={item.image} alt={item.name} fill className="object-cover" />
+                    <Image src={item.image} alt={item.name} fill sizes="80px" className="object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="text-[10px] uppercase font-bold tracking-wider text-[#b39b66]">Safa Fragrance</span>
@@ -176,4 +176,3 @@ export default function CartDrawer() {
     </div>
   );
 }
-

@@ -9,7 +9,6 @@ import {
   ShoppingBag,
   ShieldCheck,
   Truck,
-  Sparkles,
   Droplets,
   Clock,
   Wind,

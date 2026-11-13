@@ -1,6 +1,6 @@
-import { getStore } from "@/app/lib/store";
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/app/lib/admin-auth";
+import { createNeonProduct, listNeonProducts } from "@/app/lib/neon-products";
 
 export async function GET(request: Request) {
   try {
@@ -12,8 +12,29 @@ export async function GET(request: Request) {
     const page = Math.max(1, Number(searchParams.get("page") || 1));
     const pageSize = Math.max(1, Number(searchParams.get("pageSize") || 8));
 
-    const store = getStore();
-    const result = store.getProducts({ category, family, search, sort, page, pageSize });
+    const allProducts = await listNeonProducts();
+    const filtered = allProducts
+      .filter((product) => category === "all" || product.category === category)
+      .filter((product) => family === "all" || product.olfactoryFamily === family)
+      .filter((product) => {
+        const query = search.trim().toLowerCase();
+        return !query || `${product.name} ${product.description} ${product.tagline}`.toLowerCase().includes(query);
+      })
+      .sort((a, b) => {
+        if (sort === "price-low") return a.price - b.price;
+        if (sort === "price-high") return b.price - a.price;
+        if (sort === "rating") return b.rating - a.rating;
+        if (sort === "name") return a.name.localeCompare(b.name);
+        return 0;
+      });
+    const total = filtered.length;
+    const result = {
+      products: filtered.slice((page - 1) * pageSize, page * pageSize),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
 
     return NextResponse.json(result);
   } catch (error) {
@@ -32,8 +53,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Name, price, and description are required" }, { status: 400 });
     }
 
-    const store = getStore();
-    const newProduct = store.addProduct({
+    const newProduct = await createNeonProduct({
       name: body.name.trim(),
       tagline: body.tagline?.trim() || body.name,
       description: body.description.trim(),
@@ -49,8 +69,8 @@ export async function POST(request: Request) {
       notes: body.notes || { top: [], heart: [], base: [] },
       variants: Array.isArray(body.variants) ? body.variants : [],
       isFeatured: Boolean(body.isFeatured),
-      rating: 5.0,
-      reviewCount: 1
+      rating: 5,
+      reviewCount: 1,
     });
 
     return NextResponse.json(newProduct, { status: 201 });

@@ -1,84 +1,93 @@
 {
-  "products": [],
-  "orders": [],
+  "products": [
+    {
+      "name": "Safa Elegent",
+      "tagline": "Smokey Oud",
+      "description": "Test Product",
+      "category": "mens",
+      "price": 2500,
+      "stock": 100,
+      "image": "/uploads/receipt-1794579791884-6r1jlb.png",
+      "concentration": "Extrait de Parfum • 35%",
+      "sillage": "Commanding",
+      "longevity": "14+ Hours",
+      "season": "All Seasons",
+      "notes": {
+        "top": [],
+        "heart": [],
+        "base": []
+      },
+      "variants": [],
+      "isFeatured": false,
+      "rating": 5,
+      "reviewCount": 1,
+      "id": 1
+    }
+  ],
+  "orders": [
+    {
+      "firstName": "Mirza",
+      "lastName": "Zain",
+      "email": "mirza@gmail.com",
+      "phoneCountryCode": "+92",
+      "phoneNum": "23414142141",
+      "address": "House Apartment #202",
+      "city": "Karachi",
+      "country": "Pakistan",
+      "paymentMethod": "cod",
+      "items": [
+        {
+          "productId": 3,
+          "productName": "Safa Amber Oud",
+          "variantLabel": "50ml Extrait",
+          "quantity": 1,
+          "price": 2500,
+          "image": "/images/safaPerfume.png"
+        }
+      ],
+      "subTotal": 2500,
+      "discountAmount": 0,
+      "deliveryAmount": 250,
+      "totalAmount": 2750,
+      "carrier": "Safa Direct Concierge",
+      "id": 1001,
+      "trackingId": "SAFA-BBF4A072",
+      "status": "shipped",
+      "paymentStatus": "unpaid",
+      "createdAt": "2026-11-13T19:23:03.765Z"
+    }
+  ],
   "discounts": [
     {
-      "id": 1,
-      "code": "SAFA10",
-      "type": "percentage",
-      "value": 10,
-      "minAmount": 3000,
-      "maxUses": 500,
-      "usedCount": 0,
-      "expiresAt": null,
-      "active": true
-    },
-    {
-      "id": 2,
       "code": "WELCOME15",
       "type": "percentage",
       "value": 15,
-      "minAmount": 4000,
-      "maxUses": 200,
-      "usedCount": 0,
+      "minAmount": 0,
+      "maxUses": 10,
       "expiresAt": null,
-      "active": true
+      "active": true,
+      "id": 1,
+      "usedCount": 0
     }
   ],
   "delivery": [
     {
-      "id": 1,
-      "city": "Karachi",
-      "amount": 0,
-      "active": true
-    },
-    {
-      "id": 2,
       "city": "Lahore",
-      "amount": 250,
-      "active": true
-    },
-    {
-      "id": 3,
-      "city": "Islamabad",
-      "amount": 250,
-      "active": true
-    },
-    {
-      "id": 4,
-      "city": "Rawalpindi",
-      "amount": 250,
-      "active": true
-    },
-    {
-      "id": 5,
-      "city": "Faisalabad",
-      "amount": 250,
-      "active": true
-    },
-    {
-      "id": 6,
-      "city": "Multan",
-      "amount": 250,
-      "active": true
-    },
-    {
-      "id": 7,
-      "city": "Peshawar",
-      "amount": 300,
-      "active": true
-    },
-    {
-      "id": 8,
-      "city": "Quetta",
       "amount": 350,
-      "active": true
+      "active": true,
+      "id": 2
     },
     {
-      "id": 9,
-      "city": "Other Cities (Nationwide)",
+      "city": "Karachi",
       "amount": 250,
-      "active": true
+      "active": true,
+      "id": 3
+    },
+    {
+      "city": "Other Cities (Nationwide)",
+      "amount": 400,
+      "active": true,
+      "id": 4
     }
   ]
 }

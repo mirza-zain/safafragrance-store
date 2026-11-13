@@ -36,11 +36,14 @@ function OrderDetailsContent({ params }: Props) {
     if (!id) return;
 
     let isMounted = true;
-    async function loadOrder() {
+    async function loadOrder(showLoading = false) {
       try {
-        setLoading(true);
-        const res = await fetch(`/api/orders/${encodeURIComponent(id)}`);
-        if (!res.ok) throw new Error("Order not found");
+        if (showLoading) setLoading(true);
+        const res = await fetch(`/api/orders/${encodeURIComponent(id)}`, { cache: "no-store" });
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => ({}));
+          throw new Error(errJson.error || "Order not found");
+        }
         const json = await res.json();
         if (isMounted) {
           setData(json);
@@ -56,10 +59,12 @@ function OrderDetailsContent({ params }: Props) {
       }
     }
 
-    loadOrder();
+    loadOrder(true);
+    const refreshTimer = window.setInterval(() => loadOrder(), 10000);
 
     return () => {
       isMounted = false;
+      window.clearInterval(refreshTimer);
     };
   }, [id]);
 

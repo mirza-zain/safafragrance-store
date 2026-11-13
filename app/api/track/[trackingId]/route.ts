@@ -1,4 +1,4 @@
-import { getStore } from "@/app/lib/store";
+import { getNeonOrderByTrackingId } from "@/app/lib/neon-commerce";
 import { NextResponse } from "next/server";
 
 type RouteProps = {
@@ -14,8 +14,7 @@ export async function GET(request: Request, { params }: RouteProps) {
       return NextResponse.json({ error: "Tracking ID is required" }, { status: 400 });
     }
 
-    const store = getStore();
-    const order = store.getOrderByTrackingId(cleanId);
+    const order = await getNeonOrderByTrackingId(cleanId);
 
     if (!order) {
       return NextResponse.json({ error: "No order found matching this tracking code. Please verify the ID on your receipt." }, { status: 404 });
@@ -48,4 +47,3 @@ export async function GET(request: Request, { params }: RouteProps) {
     return NextResponse.json({ error: "Failed to track order" }, { status: 500 });
   }
 }
-

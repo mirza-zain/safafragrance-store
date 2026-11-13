@@ -1,6 +1,6 @@
-import { getStore } from "@/app/lib/store";
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/app/lib/admin-auth";
+import { deleteNeonProduct, getNeonProduct, updateNeonProduct } from "@/app/lib/neon-products";
 
 type RouteProps = {
   params: Promise<{ id: string }>;
@@ -9,8 +9,7 @@ type RouteProps = {
 export async function GET(request: Request, { params }: RouteProps) {
   try {
     const { id } = await params;
-    const store = getStore();
-    const product = store.getProductById(id);
+    const product = await getNeonProduct(Number(id));
 
     if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
@@ -30,8 +29,7 @@ export async function PUT(request: Request, { params }: RouteProps) {
     }
     const { id } = await params;
     const body = await request.json();
-    const store = getStore();
-    const updated = store.updateProduct(Number(id), body);
+    const updated = await updateNeonProduct(Number(id), body);
 
     if (!updated) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
@@ -50,8 +48,7 @@ export async function DELETE(request: Request, { params }: RouteProps) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const { id } = await params;
-    const store = getStore();
-    const deleted = store.deleteProduct(Number(id));
+    const deleted = await deleteNeonProduct(Number(id));
 
     if (!deleted) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });

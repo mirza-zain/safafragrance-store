@@ -31,13 +31,14 @@ export default function PricingPage() {
     maxUses: ""
   });
   const [deliveryForm, setDeliveryForm] = useState({ city: "", amount: "" });
+  const commonCities = ["Karachi", "Lahore", "Islamabad", "Rawalpindi", "Faisalabad", "Multan", "Peshawar", "Quetta", "Sialkot", "Gujranwala", "Hyderabad"];
   const [message, setMessage] = useState("");
 
   const load = async () => {
     try {
       const [discountResponse, deliveryResponse] = await Promise.all([
-        fetch("/api/discount-codes"),
-        fetch("/api/delivery-charges")
+        fetch("/api/discount-codes", { cache: "no-store" }),
+        fetch("/api/delivery-charges", { cache: "no-store" })
       ]);
       if (discountResponse.ok) setDiscounts(await discountResponse.json());
       if (deliveryResponse.ok) setDeliveries(await deliveryResponse.json());
@@ -47,7 +48,8 @@ export default function PricingPage() {
   };
 
   useEffect(() => {
-    load();
+    const timer = window.setTimeout(load, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const submit = async (event: FormEvent, url: string, body: object, reset: () => void) => {
@@ -64,7 +66,7 @@ export default function PricingPage() {
         reset();
         await load();
       }
-    } catch (err) {
+    } catch {
       setMessage("Error saving rule");
     }
   };
@@ -84,7 +86,12 @@ export default function PricingPage() {
 
   const remove = async (url: string) => {
     try {
-      await fetch(url, { method: "DELETE" });
+      const res = await fetch(url, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Failed to delete item");
+        return;
+      }
       await load();
     } catch (err) {
       console.error("Delete error:", err);
@@ -95,7 +102,7 @@ export default function PricingPage() {
     <main className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-8">
       <header>
         <h1 className="text-3xl font-bold font-serif text-neutral-900">Pricing Rules</h1>
-        <p className="mt-1 text-sm text-neutral-500">Control checkout discount promo codes and regional delivery charges.</p>
+        <p className="mt-1 text-sm text-neutral-500">Control checkout discount promo codes, Pakistani city charges, and the default charge for all other locations.</p>
       </header>
 
       {message && <p className="rounded-xl bg-neutral-100 border border-neutral-200 px-4 py-3 text-sm font-medium">{message}</p>}
@@ -198,7 +205,10 @@ export default function PricingPage() {
 
         {/* Delivery Charges Section */}
         <div className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-6 shadow-xs">
-          <h2 className="text-xl font-semibold text-neutral-900">Add Delivery Rule</h2>
+          <h2 className="text-xl font-semibold text-neutral-900">Delivery Charges</h2>
+          <p className="text-xs leading-relaxed text-neutral-500">
+            Add a Pakistani city for a specific price. Use <strong>Other Cities (Nationwide)</strong> once to set the fallback for Pakistani districts and international cities.
+          </p>
           <form
             className="space-y-3"
             onSubmit={(event) =>
@@ -209,11 +219,16 @@ export default function PricingPage() {
           >
             <input
               required
-              placeholder="City or 'Nationwide' fallback"
+              list="common-pakistan-cities"
+              placeholder="City or Other Cities (Nationwide)"
               value={deliveryForm.city}
               onChange={(e) => setDeliveryForm({ ...deliveryForm, city: e.target.value })}
               className="w-full rounded-xl border border-neutral-200 px-3.5 py-2 text-sm focus:outline-none focus:border-black"
             />
+            <datalist id="common-pakistan-cities">
+              {commonCities.map((city) => <option key={city} value={city} />)}
+              <option value="Other Cities (Nationwide)" />
+            </datalist>
             <input
               required
               type="number"

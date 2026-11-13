@@ -5,17 +5,29 @@ import { Product, Order } from "@/app/lib/types";
 import QuickRecordSaleButton from "./(component)/QuickRecordSaleButton";
 import Link from "next/link";
 import { ArrowRight, BarChart3, Star } from "lucide-react";
+import { subscribeUserToPush } from "@/app/lib/push-client";
 
 export default function AdminDashboardPage() {
+  // Handle PWA install prompt
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  // State to hold the install prompt event
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     async function loadData() {
       try {
         const [ordersRes, productsRes] = await Promise.all([
-          fetch("/api/orders"),
+          fetch("/api/orders", { cache: "no-store" }),
           fetch("/api/product")
         ]);
         if (ordersRes.ok) {
@@ -30,11 +42,12 @@ export default function AdminDashboardPage() {
       } catch (err) {
         console.error("Dashboard data load error:", err);
       } finally {
-        setLoading(false);
       }
     }
 
     loadData();
+    const refreshTimer = window.setInterval(loadData, 10000);
+    return () => window.clearInterval(refreshTimer);
   }, []);
 
   const currentMonthName = "November 2026";
@@ -67,6 +80,37 @@ export default function AdminDashboardPage() {
               <span>Featured Showcase</span>
             </Link>
             <QuickRecordSaleButton />
+            {/* Notification & Mobile App Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 mt-3">
+              <button
+                type="button"
+                onClick={async () => { const result = await subscribeUserToPush(); alert(result.message); }}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition"
+              >
+                Enable Notifications
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                if (deferredPrompt) {
+                  deferredPrompt.prompt();
+                  deferredPrompt.userChoice.then((choice: any) => {
+                    if (choice.outcome === 'accepted') {
+                      console.log('User accepted the install prompt');
+                    } else {
+                      console.log('User dismissed the install prompt');
+                    }
+                    setDeferredPrompt(null);
+                  });
+                } else {
+                  alert('Install prompt not available');
+                }
+              }}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition"
+              >
+                Install Mobile App
+              </button>
+            </div>
           </div>
         </div>
 

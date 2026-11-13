@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingBag, Check, Sparkles, ArrowRight } from "lucide-react";
+import { ShoppingBag, Check } from "lucide-react";
 import { useCart } from "@/app/context/CartContext";
 
 type ProductVariant = {
@@ -26,42 +26,16 @@ type FeaturedProduct = {
   variants: ProductVariant[];
 };
 
-// Curated luxury accent schemes for the 4 slots inspired by Perfumora
-const SCENT_THEMES = [
-  {
-    bg: "#183e2d", // Emerald Noir
-    accent: "#1b4431",
-    glow: "rgba(216, 195, 140, 0.25)",
-    tag: "Edition 01",
-  },
-  {
-    bg: "#3f1f2c", // Plum Velvet
-    accent: "#4a2233",
-    glow: "rgba(235, 180, 190, 0.28)",
-    tag: "Edition 02",
-  },
-  {
-    bg: "#452e18", // Golden Smoked Amber
-    accent: "#53371d",
-    glow: "rgba(245, 205, 140, 0.3)",
-    tag: "Edition 03",
-  },
-  {
-    bg: "#1c2a29", // Midnight Cypress
-    accent: "#223533",
-    glow: "rgba(180, 215, 205, 0.25)",
-    tag: "Edition 04",
-  },
-];
-
 interface ShowcaseCardProps {
   product: FeaturedProduct;
   index: number;
 }
 
+const CARD_ACCENTS = ["#183e2d", "#3f1f2c", "#452e18", "#1c2a29"];
+
 function ShowcaseCard({ product, index }: ShowcaseCardProps) {
-  const theme = SCENT_THEMES[index % SCENT_THEMES.length];
   const { addToCart } = useCart();
+  const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
 
   // Variant selection (only if product has variants)
   const hasVariants = Boolean(product.variants && product.variants.length > 0);
@@ -73,91 +47,6 @@ function ShowcaseCard({ product, index }: ShowcaseCardProps) {
 
   // Add to Bag feedback state
   const [added, setAdded] = useState(false);
-
-  // 3D Tilt Stage Refs and States
-  const stageRef = useRef<HTMLDivElement>(null);
-  const flaconRef = useRef<HTMLDivElement>(null);
-  const frameId = useRef<number | null>(null);
-
-  const targetX = useRef(0);
-  const targetY = useRef(0);
-  const currentX = useRef(0);
-  const currentY = useRef(0);
-
-  const [isHovered, setIsHovered] = useState(false);
-  const [glare, setGlare] = useState({ x: 50, y: 50, opacity: 0 });
-
-  // Physics animation loop using lerp for silky smooth 3D response
-  const updateMotion = useCallback(() => {
-    currentX.current += (targetX.current - currentX.current) * 0.12;
-    currentY.current += (targetY.current - currentY.current) * 0.12;
-
-    if (flaconRef.current) {
-      const rotX = (-currentY.current * 16).toFixed(2);
-      const rotY = (currentX.current * 16).toFixed(2);
-      const shadowX = (-currentX.current * 18).toFixed(1);
-      const shadowY = (currentY.current * 18 + 16).toFixed(1);
-
-      flaconRef.current.style.transform = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(28px) scale3d(1.03, 1.03, 1.03)`;
-      flaconRef.current.style.filter = `drop-shadow(${shadowX}px ${shadowY}px 22px rgba(0, 0, 0, 0.45))`;
-    }
-
-    frameId.current = requestAnimationFrame(updateMotion);
-  }, []);
-
-  useEffect(() => {
-    frameId.current = requestAnimationFrame(updateMotion);
-    return () => {
-      if (frameId.current) cancelAnimationFrame(frameId.current);
-    };
-  }, [updateMotion]);
-
-  // Ambient idle breathing when not hovered
-  useEffect(() => {
-    if (isHovered) return;
-
-    let time = index * 1.5; // Offset by card index for organic wave effect
-    const interval = setInterval(() => {
-      time += 0.04;
-      targetX.current = Math.sin(time * 0.8) * 0.22;
-      targetY.current = Math.cos(time * 0.6) * 0.18;
-      setGlare({
-        x: 50 + targetX.current * 30,
-        y: 45 + targetY.current * 30,
-        opacity: 0.18,
-      });
-    }, 16);
-
-    return () => clearInterval(interval);
-  }, [isHovered, index]);
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!stageRef.current) return;
-    setIsHovered(true);
-
-    const rect = stageRef.current.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width;
-    const py = (e.clientY - rect.top) / rect.height;
-
-    const normX = Math.max(-1, Math.min(1, (px - 0.5) * 2));
-    const normY = Math.max(-1, Math.min(1, (py - 0.5) * 2));
-
-    targetX.current = normX;
-    targetY.current = normY;
-
-    setGlare({
-      x: px * 100,
-      y: py * 100,
-      opacity: 0.55,
-    });
-  };
-
-  const handlePointerLeave = () => {
-    setIsHovered(false);
-    targetX.current = 0;
-    targetY.current = 0;
-    setGlare((prev) => ({ ...prev, opacity: 0 }));
-  };
 
   const handleAddToCart = () => {
     addToCart(
@@ -179,178 +68,78 @@ function ShowcaseCard({ product, index }: ShowcaseCardProps) {
   };
 
   return (
-    <li className="flex flex-col list-none">
-      <article className="relative flex flex-col h-full rounded-[2rem] border border-[#e7decb]/80 bg-white shadow-[0_18px_44px_-26px_rgba(14,40,29,0.18)] hover:shadow-[0_24px_50px_-20px_rgba(14,40,29,0.28)] transition-all duration-500 overflow-hidden group">
-        
-        {/* TOP BOTTLE 3D SHOWCASE STAGE */}
-        <div
-          ref={stageRef}
-          onPointerMove={handlePointerMove}
-          onPointerLeave={handlePointerLeave}
-          className="relative w-full overflow-hidden select-none cursor-grab active:cursor-grabbing"
-          style={{
-            backgroundColor: theme.bg,
-            perspective: "900px",
-          }}
+    <li className="min-w-0 list-none">
+      <article className="flex h-full flex-col text-center">
+        <Link
+          href={`/productDetail/${product.id}`}
+          className="group relative block aspect-4/5 overflow-hidden rounded-xl border-2 bg-[#f3eee6] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand"
+          style={{ borderColor: accent }}
+          aria-label={`View ${product.name} details`}
         >
-          {/* Radial Ambient Backdrop Glow */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background: `radial-gradient(120% 80% at 50% 18%, ${theme.glow}, transparent 65%)`,
-            }}
+          <span className="absolute left-3 top-3 z-10 rounded-full bg-black/75 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider text-white">
+            Featured
+          </span>
+          <Image
+            src={product.image || "/images/safaPerfume.png"}
+            alt={`${product.name} fragrance`}
+            fill
+            sizes="(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 25vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            priority={index < 2}
           />
+        </Link>
 
-          {/* Scent Accord Pill */}
-          <div className="absolute top-4 left-4 z-20">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase text-white/90 bg-black/30 backdrop-blur-md border border-white/10 shadow-xs">
-              <span className="size-1.5 rounded-full bg-[#d8c38c]" />
-              {product.concentration || "35% Extrait"}
-            </span>
-          </div>
-
-          {/* 3D Dynamic Specular Light Glare Sweep */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
-            style={{
-              opacity: glare.opacity,
-              background: `radial-gradient(circle 180px at ${glare.x}% ${glare.y}%, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.08) 50%, transparent 80%)`,
-            }}
-          />
-
-          {/* 3D Tilting Flacon Flank */}
-          <Link
-            href={`/productDetail/${product.id}`}
-            className="relative z-10 block px-6 pt-10 pb-12 focus:outline-hidden"
-            aria-label={`View ${product.name} details`}
-          >
-            <div
-              ref={flaconRef}
-              className="mx-auto aspect-3/4 w-[76%] max-w-[240px] will-change-transform transition-all duration-100 ease-out"
-              style={{
-                transformStyle: "preserve-3d",
-              }}
-            >
-              <div className="relative w-full h-full">
-                <Image
-                  src={product.image || "/images/safaPerfume.png"}
-                  alt={`${product.name} Luxury Flacon`}
-                  fill
-                  sizes="(max-width: 640px) 75vw, (max-width: 1024px) 40vw, 22vw"
-                  className="object-contain"
-                  priority={index < 2}
-                />
-              </div>
-            </div>
+        <div className="flex min-h-[178px] flex-1 flex-col items-center pt-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9a7b35]">
+            {product.olfactoryFamily || product.category || "Safa Fragrance"}
+          </p>
+          <Link href={`/productDetail/${product.id}`} className="mt-2">
+            <h3 className="text-xl font-bold uppercase tracking-wide text-brand-dark transition-colors hover:text-brand">
+              {product.name}
+            </h3>
           </Link>
+          <p className="mt-2 text-base font-medium text-neutral-700">
+            {variants.length > 1 ? `From Rs. ${currentPrice.toLocaleString()}` : `Rs. ${currentPrice.toLocaleString()}`}
+          </p>
 
-          {/* Interactive 3D Perspective Cue */}
-          <div className="absolute bottom-2.5 right-3.5 z-20 pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity">
-            <span className="text-[9px] uppercase tracking-widest text-white/70 font-semibold flex items-center gap-1">
-              <Sparkles className="size-2.5 text-[#d8c38c]" /> 3D Tilt
-            </span>
-          </div>
-        </div>
-
-        {/* BOTTOM CARD CONTENT (PERFUMORA ARCHITECTURE) */}
-        <div className="p-6 flex flex-col flex-1 justify-between bg-gradient-to-b from-white to-[#faf7f2]/50">
-          <div>
-            {/* Price Pill Badge */}
-            <div className="flex items-center justify-between mb-3">
-              <span
-                className="inline-flex items-center rounded-full px-4 py-1.5 text-[0.95rem] font-bold tracking-tight text-white shadow-xs tabular-nums transition-colors duration-300"
-                style={{ backgroundColor: theme.accent }}
-              >
-                Rs. {currentPrice.toLocaleString()}
-              </span>
-
-              {/* Family pill */}
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
-                {product.olfactoryFamily || product.category || "Extrait de Parfum"}
-              </span>
+          {variants.length > 1 && (
+            <div role="radiogroup" aria-label="Select volume" className="mt-4 flex min-h-8 w-full gap-2">
+              {variants.map((v, i) => {
+                const isSelected = i === selectedVariantIndex;
+                return (
+                  <button
+                    key={v.label}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() => setSelectedVariantIndex(i)}
+                    className={`flex-1 rounded-md border py-2 text-[12px] font-semibold uppercase tracking-wider transition ${
+                      isSelected
+                        ? "border-brand-dark bg-brand-dark text-white"
+                        : "border-neutral-300 bg-transparent text-neutral-600 hover:border-brand-dark"
+                    }`}
+                  >
+                    {v.label}
+                  </button>
+                );
+              })}
             </div>
+          )}
 
-            {/* Fragrance Name */}
-            <Link href={`/productDetail/${product.id}`} className="group/title block">
-              <h3 className="text-xl sm:text-2xl font-bold text-[#0e281d] font-[Galsod] uppercase tracking-wide group-hover/title:text-[#b39b66] transition-colors">
-                {product.name}
-              </h3>
-            </Link>
+          {!variants.length && <div className="mt-4 min-h-8" aria-hidden="true" />}
 
-            {/* Subtitle / Tagline */}
-            <p className="text-xs text-neutral-600 mt-1 line-clamp-1 font-medium">
-              {product.tagline || product.description}
-            </p>
-          </div>
-
-          {/* Controls: Size Selector & Add to Bag */}
-          <div className="mt-5 space-y-4 pt-4 border-t border-[#e7decb]/60">
-            {/* Size Variant Radio Buttons (Shown when 2+ variants exist) */}
-            {variants.length > 1 && (
-              <div
-                role="radiogroup"
-                aria-label="Select Volume"
-                className="flex items-center gap-2"
-              >
-                {variants.map((v, i) => {
-                  const isSelected = i === selectedVariantIndex;
-                  return (
-                    <button
-                      key={v.label}
-                      type="button"
-                      role="radio"
-                      aria-checked={isSelected}
-                      onClick={() => setSelectedVariantIndex(i)}
-                      className={`flex-1 rounded-full border py-2 text-xs font-semibold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                        isSelected
-                          ? "border-[#1b4431] bg-[#1b4431] text-white shadow-xs"
-                          : "border-[#e7decb] bg-white text-neutral-600 hover:border-[#1b4431]/60 hover:text-neutral-900"
-                      }`}
-                    >
-                      {v.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Add to Bag Luxury Action Button */}
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              className={`w-full relative overflow-hidden rounded-full py-3.5 px-6 text-xs sm:text-sm font-semibold tracking-widest uppercase transition-all duration-300 shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] ${
-                added
-                  ? "bg-[#0e281d] text-[#d8c38c] ring-2 ring-[#d8c38c]"
-                  : "bg-[#1b4431] text-white hover:bg-[#0e281d] hover:shadow-lg border border-[#255840]"
-              }`}
-              aria-label={`Add ${product.name} ${activeVariant ? `(${activeVariant.label})` : ""} to cart`}
-            >
-              {added ? (
-                <>
-                  <Check className="size-4 text-[#d8c38c] animate-bounce" />
-                  <span>Added to Bag</span>
-                </>
-              ) : (
-                <>
-                  <ShoppingBag className="size-4" />
-                  <span>Add to Bag</span>
-                </>
-              )}
-            </button>
-
-            {/* Quick Explore Link */}
-            <div className="text-center pt-1">
-              <Link
-                href={`/productDetail/${product.id}`}
-                className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-500 hover:text-[#1b4431] transition-colors"
-              >
-                <span>View Edition Details</span>
-                <ArrowRight className="size-3 text-[#b39b66]" />
-              </Link>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className={`mt-4 flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border-2 px-3 text-[11px] font-bold uppercase tracking-wider transition ${
+              added
+                ? "border-[#1b4431] bg-[#1b4431] text-white"
+                : "border-brand bg-transparent text-brand-dark hover:bg-brand hover:text-white"
+            }`}
+            aria-label={`Add ${product.name} to cart`}
+          >
+            {added ? <><Check className="size-3.5" /> Added to Cart</> : <><ShoppingBag className="size-3.5" /> Add to Cart</>}
+          </button>
         </div>
       </article>
     </li>
@@ -366,7 +155,7 @@ export default function FeaturedProducts() {
     async function loadFeatured() {
       try {
         setLoading(true);
-        const res = await fetch("/api/featured-products");
+        const res = await fetch("/api/featured-products", { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to load featured fragrances");
         const data = await res.json();
         setProducts(data.featuredProducts || []);
@@ -398,17 +187,17 @@ export default function FeaturedProducts() {
 
       <div className="relative z-10">
         {/* EDITORIAL HEADER */}
-        <div className="text-center max-w-2xl mx-auto space-y-3 mb-12 sm:mb-16">
+        <div className="mx-auto mb-12 max-w-2xl space-y-4 text-center sm:mb-16">
           <p className="text-xs uppercase tracking-[0.3em] font-semibold text-[#b39b66]">
-            The Collection • Haute Parfumerie
+            The Safa Collection • Extrait de Parfum
           </p>
 
           <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold uppercase tracking-wider text-[#0e281d] font-[Galsod]">
-            Selected Fragrances
+            Featured fragrances
           </h2>
 
           <p className="text-sm sm:text-base text-neutral-700 max-w-xl mx-auto font-normal leading-relaxed">
-            Handcrafted Extrait de Parfum formulated with high oil concentrations. Commanding presence, delicate refinement, and unforgettable sillage.
+            Discover the four fragrances selected from the Safa collection.
           </p>
         </div>
 
@@ -441,7 +230,7 @@ export default function FeaturedProducts() {
 
         {/* THE 4 FEATURED PRODUCTS SHOWCASE */}
         {!loading && !error && products.length > 0 && (
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          <ul className="mx-auto grid w-full max-w-6xl grid-cols-1 items-stretch gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
             {products.slice(0, 4).map((product, idx) => (
               <ShowcaseCard key={product.id} product={product} index={idx} />
             ))}

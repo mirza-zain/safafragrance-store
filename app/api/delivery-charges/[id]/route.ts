@@ -1,4 +1,4 @@
-import { getStore } from "@/app/lib/store";
+import { deleteNeonDeliveryCharge, toggleNeonDeliveryCharge } from "@/app/lib/neon-commerce";
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/app/lib/admin-auth";
 
@@ -13,8 +13,7 @@ export async function PATCH(request: Request, { params }: RouteProps) {
     }
     const { id } = await params;
     const body = await request.json();
-    const store = getStore();
-    const updated = store.toggleDeliveryCharge(Number(id), body.active);
+    const updated = await toggleNeonDeliveryCharge(Number(id), body.active);
 
     if (!updated) {
       return NextResponse.json({ error: "Delivery charge not found" }, { status: 404 });
@@ -33,8 +32,7 @@ export async function DELETE(request: Request, { params }: RouteProps) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const { id } = await params;
-    const store = getStore();
-    const deleted = store.deleteDeliveryCharge(Number(id));
+    const deleted = await deleteNeonDeliveryCharge(Number(id));
 
     if (!deleted) {
       return NextResponse.json({ error: "Delivery charge not found" }, { status: 404 });

@@ -1,10 +1,9 @@
 import { MetadataRoute } from "next";
-import { getStore } from "./lib/store";
+import { listNeonProducts } from "./lib/neon-products";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://safafragrance.com";
-  const store = getStore();
-  const products = store.getProducts({ pageSize: 100 }).products;
+  const products = await listNeonProducts();
 
   const productUrls: MetadataRoute.Sitemap = products.map((product) => ({
     url: `${baseUrl}/productDetail/${product.id}`,

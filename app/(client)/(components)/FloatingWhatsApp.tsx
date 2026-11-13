@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { MessageSquare, X, Sparkles } from "lucide-react";
+import { MessageSquare, X } from "lucide-react";
 
 export default function FloatingWhatsApp() {
   const [open, setOpen] = useState(false);

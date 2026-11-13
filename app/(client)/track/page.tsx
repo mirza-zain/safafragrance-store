@@ -1,21 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import React, { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Search,
   Package,
   Truck,
   CheckCircle2,
-  Clock,
   Copy,
   Check,
   AlertCircle,
   Phone,
   Sparkles,
-  ShieldCheck
 } from "lucide-react";
 
 type TrackedOrder = {
@@ -51,13 +47,7 @@ function TrackContent() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (urlId) {
-      lookupOrder(urlId);
-    }
-  }, [urlId]);
-
-  const lookupOrder = async (idToSearch: string) => {
+  const lookupOrder = useCallback(async (idToSearch: string) => {
     const clean = idToSearch.trim().toUpperCase();
     if (!clean) return;
 
@@ -75,7 +65,13 @@ function TrackContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!urlId) return;
+    const timer = window.setTimeout(() => lookupOrder(urlId), 0);
+    return () => window.clearTimeout(timer);
+  }, [urlId, lookupOrder]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,8 +184,6 @@ function TrackContent() {
               ].map((s) => {
                 const Icon = s.icon;
                 const isDone = activeStep >= s.step;
-                const isCurrent = activeStep === s.step;
-
                 return (
                   <div
                     key={s.step}
@@ -327,4 +321,3 @@ export default function TrackOrderPage() {
     </main>
   );
 }
-

@@ -37,6 +37,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
     try {
       const stored = window.localStorage.getItem(CART_STORAGE_KEY);
       if (stored) {
@@ -50,6 +51,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } finally {
       setHasHydrated(true);
     }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -146,4 +149,3 @@ export function useCart() {
   }
   return context;
 }
-

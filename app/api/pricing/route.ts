@@ -1,4 +1,4 @@
-import { getStore } from "@/app/lib/store";
+import { getNeonDiscountByCode, listNeonDeliveryCharges } from "@/app/lib/neon-commerce";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -6,6 +6,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const items = body.items || [];
     const city = body.city || "Karachi";
+    const country = body.country || "Pakistan";
     const discountCodeInput = (body.discountCode || "").trim().toUpperCase();
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -22,13 +23,13 @@ export async function POST(request: Request) {
       return sum + Number(item.price || 0) * Number(item.quantity || 1);
     }, 0);
 
-    const store = getStore();
+    const deliveryCharges = await listNeonDeliveryCharges();
     let discountAmount = 0;
     let appliedCode: string | null = null;
     let discountError: string | null = null;
 
     if (discountCodeInput) {
-      const discount = store.getDiscountByCode(discountCodeInput);
+      const discount = await getNeonDiscountByCode(discountCodeInput);
       if (!discount) {
         discountError = "Invalid discount code.";
       } else if (discount.maxUses && discount.usedCount >= discount.maxUses) {
@@ -47,7 +48,12 @@ export async function POST(request: Request) {
       }
     }
 
-    const deliveryAmount = store.calculateDelivery(city, subtotal);
+    const targetCity = city.trim().toLowerCase();
+    const deliveryAmount = country.trim().toLowerCase() === "pakistan"
+      ? (deliveryCharges.find((charge) => charge.active && charge.city.toLowerCase() === targetCity)?.amount
+        ?? deliveryCharges.find((charge) => charge.active && /other|default|nationwide/i.test(charge.city))?.amount
+        ?? 250)
+      : (deliveryCharges.find((charge) => charge.active && /other|default|nationwide/i.test(charge.city))?.amount ?? 250);
     const totalAmount = Math.max(0, subtotal - discountAmount + deliveryAmount);
 
     return NextResponse.json({
@@ -63,4 +69,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to calculate pricing" }, { status: 500 });
   }
 }
-

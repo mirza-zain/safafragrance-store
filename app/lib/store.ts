@@ -66,7 +66,6 @@ type StoreData = {
 
 // Global memory cache to retain mutations in Node runtime
 declare global {
-  // eslint-disable-next-line no-var
   var __safaStore: StoreData | undefined;
 }
 
@@ -382,13 +381,20 @@ export function getStore() {
       return true;
     },
 
-    calculateDelivery: (city: string, subtotal: number) => {
+    calculateDelivery: (city: string, country = "Pakistan") => {
+      if (country.trim().toLowerCase() !== "pakistan") {
+        const fallback = data.delivery.find((d) =>
+          d.active && /other|default|nationwide/i.test(d.city)
+        );
+        return fallback ? fallback.amount : 250;
+      }
       const target = city.trim().toLowerCase();
       const match = data.delivery.find((d) => d.city.toLowerCase() === target && d.active);
       if (match) return match.amount;
-      const fallback = data.delivery.find((d) => d.city.includes("Other") || d.city.includes("Nationwide"));
+      const fallback = data.delivery.find((d) =>
+        d.active && /other|default|nationwide/i.test(d.city)
+      );
       return fallback ? fallback.amount : 250;
     }
   };
 }
-

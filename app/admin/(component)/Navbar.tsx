@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   LayoutGrid,
   BarChart3,
@@ -9,12 +10,30 @@ import {
   Package,
   Tag,
   ArrowLeft,
-  LogOut
+  LogOut,
+  Download
 } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch((error) => {
+      console.error("Admin service worker registration failed:", error);
+    });
+
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+  }, []);
 
   if (pathname === "/admin/login") {
     return null;
@@ -28,6 +47,13 @@ export default function Navbar() {
     } catch {
       router.push("/admin/login");
     }
+  };
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
   };
 
   const links = [
@@ -75,6 +101,16 @@ export default function Navbar() {
       </div>
 
       <div className="mt-4 border-t border-neutral-100 pt-4 md:mt-auto md:pt-6 space-y-1">
+        {installPrompt && (
+          <button
+            type="button"
+            onClick={handleInstall}
+            className="flex w-full items-center gap-2.5 rounded-xl bg-neutral-900 px-3 py-2 text-left text-sm font-medium text-white transition hover:bg-neutral-700"
+          >
+            <Download className="size-4" />
+            <span>Install Admin App</span>
+          </button>
+        )}
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition text-left"

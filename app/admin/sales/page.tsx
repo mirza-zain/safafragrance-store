@@ -6,7 +6,6 @@ import { Order } from "@/app/lib/types";
 import { 
   getOrderChannel, 
   getChannelMeta, 
-  formatRs, 
   toMonthKey, 
   formatMonthName, 
   SalesChannel 
@@ -19,9 +18,7 @@ import {
   ShoppingBag, 
   DollarSign, 
   CheckCircle2, 
-  Clock, 
   Search,
-  Receipt
 } from "lucide-react";
 
 const statusClasses: Record<string, string> = {
@@ -35,7 +32,6 @@ const statusClasses: Record<string, string> = {
 export default function MonthlySalesPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const [selectedMonth, setSelectedMonth] = useState<string>("2026-11");
   const [channelFilter, setChannelFilter] = useState<string>("all");
@@ -62,14 +58,15 @@ export default function MonthlySalesPage() {
       setAvailableMonths(Array.from(monthSet).sort().reverse());
       setSelectedMonth("2026-11");
     } catch (err) {
-      setError((err as Error).message);
+      console.error("Failed to load sales:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchOrders();
+    const timer = window.setTimeout(fetchOrders, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const filteredOrders = useMemo(() => {

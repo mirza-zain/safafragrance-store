@@ -58,7 +58,7 @@ export default function Safa3DHero() {
       powerPreference: "high-performance",
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.25 : 1.5));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
     mount.appendChild(renderer.domElement);
@@ -118,15 +118,6 @@ export default function Safa3DHero() {
     decalTex.flipY = false;
 
     // Shared 24K Royal Gold Material for accents
-    const royalGoldMat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0xe5b842), // Lustrous 24K Royal Gold
-      metalness: 0.98,
-      roughness: 0.12,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.04,
-      envMapIntensity: 2.2,
-    });
-
     // Soft blurred circular mist droplet texture for atomized fragrance spray
     const sprayDropletTex = textureLoader.load("/images/spray_droplet.png");
 
@@ -430,7 +421,7 @@ export default function Safa3DHero() {
     // SPRAY MIST PARTICLES: Soft atomized golden fragrance mist
     // Activates ONLY when the cap goes up, spraying horizontally to the right!
     // -----------------------------------------------------------------------
-    const particleCount = 280;
+    const particleCount = isMobile ? 120 : 180;
     const sprayParticles: SprayParticle[] = [];
     const particlePositions = new Float32Array(particleCount * 3);
 
@@ -522,7 +513,7 @@ export default function Safa3DHero() {
 
         // Gentle petal contour: rounded spade profile tapering to base (ny = -1)
         // With an iconic subtle Sakura petal heart-cleft notch at the very tip (ny > 0.8)
-        let widthScale = Math.sin((ny * 0.5 + 0.5) * Math.PI * 0.85);
+        const widthScale = Math.sin((ny * 0.5 + 0.5) * Math.PI * 0.85);
         if (ny > 0.75) {
           const notch = (1.0 - Math.abs(nx * 1.8)) * 0.12 * Math.max(0, (ny - 0.75) / 0.25);
           y -= notch * (l * 0.5);
@@ -597,7 +588,7 @@ export default function Safa3DHero() {
       }),
     ];
 
-    const petalCount = 42; // A fuller drift that remains soft around the flacon
+    const petalCount = isMobile ? 14 : 24;
     for (let i = 0; i < petalCount; i++) {
       const mat = sakuraMaterials[i % sakuraMaterials.length];
       const pMesh = new THREE.Mesh(sakuraPetalGeo, mat);
@@ -640,6 +631,9 @@ export default function Safa3DHero() {
     // MOUSE & TOUCH ORBIT INTERACTION + CLICK-TO-UNCAP
     // -----------------------------------------------------------------------
     let uncapResetTimer: ReturnType<typeof setTimeout> | null = null;
+    let heroVisible = true;
+    let pageVisible = !document.hidden;
+    let lastRenderAt = 0;
 
     const triggerClickUncap = () => {
       manualUncapTarget.current = 1.0;
@@ -723,7 +717,7 @@ export default function Safa3DHero() {
       masterStage.scale.set(scale, scale, scale);
 
       renderer.setSize(w, h);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.25 : 1.5));
     };
 
     window.addEventListener("resize", handleResize);
@@ -735,7 +729,16 @@ export default function Safa3DHero() {
     const tempVec = new THREE.Vector3();
 
     const animate = () => {
+      if (!heroVisible || !pageVisible) {
+        animFrameId.current = null;
+        return;
+      }
+
       animFrameId.current = requestAnimationFrame(animate);
+      const now = performance.now();
+      if (now - lastRenderAt < 33) return;
+      lastRenderAt = now;
+
       timer.update();
       const delta = timer.getDelta();
       const elapsedTime = timer.getElapsed();
@@ -861,12 +864,33 @@ export default function Safa3DHero() {
       renderer.render(scene, camera);
     };
 
+    const heroObserver = new IntersectionObserver(
+      ([entry]) => {
+        heroVisible = entry.isIntersecting;
+        if (heroVisible && pageVisible && animFrameId.current === null) {
+          animate();
+        }
+      },
+      { threshold: 0.05 }
+    );
+    heroObserver.observe(mount);
+
+    const onVisibilityChange = () => {
+      pageVisible = !document.hidden;
+      if (pageVisible && heroVisible && animFrameId.current === null) {
+        animate();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     animate();
 
     return () => {
       isCancelled = true;
       if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
       if (uncapResetTimer) clearTimeout(uncapResetTimer);
+      heroObserver.disconnect();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("mousedown", onPointerDownHandler);
       window.removeEventListener("mousemove", onPointerMove);
@@ -887,17 +911,17 @@ export default function Safa3DHero() {
   }, []);
 
   return (
-    <section className="relative w-full h-[90vh] min-h-[620px] max-h-[980px] bg-gradient-to-b from-[#faf7f2] via-[#f7f1e7] to-[#ede2d2] text-[#0e281d] overflow-hidden flex items-center justify-center select-none">
+    <section className="relative w-full h-[90vh] min-h-[620px] max-h-[980px] bg-gradient-to-b from-[#f2ece2] via-[#ebe0d2] to-[#d8cbb9] text-[#0e281d] overflow-hidden flex items-center justify-center select-none">
       {/* 1. SEAMLESS LUXURY ATELIER STUDIO LIGHTING (Warm Silk & Champagne Studio) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Soft Warm Blush Glow behind the flacon */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[75vw] h-[75vw] max-w-[850px] max-h-[850px] rounded-full bg-radial from-[#ebd7cd]/60 via-[#f5ede4]/30 to-transparent blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[75vw] h-[75vw] max-w-[850px] max-h-[850px] rounded-full bg-radial from-[#dfc9bd]/45 via-[#eee3d7]/20 to-transparent blur-3xl" />
         {/* Regal Champagne Gold Radiance */}
         <div className="absolute top-1/3 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] rounded-full bg-radial from-[#dfc59b]/35 via-[#ebdcc2]/15 to-transparent blur-2xl" />
         {/* Soft Polished Studio Floor Shadow / Pedestal */}
         <div className="absolute bottom-[13%] left-1/2 -translate-x-1/2 w-[380px] sm:w-[500px] h-[50px] rounded-[100%] bg-radial from-[#2a221b]/22 via-[#473a2e]/06 to-transparent blur-lg" />
         {/* Studio vignette blending smoothly into #faf7f2 */}
-        <div className="absolute inset-0 bg-radial from-transparent via-[#faf7f2]/10 to-[#ede3d4]/30" />
+        <div className="absolute inset-0 bg-radial from-transparent via-[#f2e9dd]/8 to-[#d4c6b3]/35" />
       </div>
 
       {/* 2. ARCHITECTURAL 3D BACKGROUND WATERMARK (Deep Spatial Depth Layer) */}

@@ -16,9 +16,6 @@ export default function InvoicePrintButton({ order }: { order: Order }) {
     minute: "2-digit"
   });
 
-  const isOnlinePayment = order.paymentMethod === "bank_transfer";
-  const isPaid = order.paymentStatus === "paid";
-
   const handlePrint = () => {
     window.print();
   };
@@ -41,7 +38,7 @@ export default function InvoicePrintButton({ order }: { order: Order }) {
         <div className="flex justify-between items-start border-b-2 border-black pb-6">
           <div>
             <div className="relative h-16 w-44 mb-2">
-              <Image src="/logo.png" alt="Safa Fragrance" fill priority className="object-contain object-left" />
+              <Image src="/logo.png" alt="Safa Fragrance" fill priority sizes="240px" className="object-contain object-left" />
             </div>
             <p className="text-xs uppercase font-bold tracking-widest text-neutral-600">Haute Parfumerie • Pakistan</p>
             <p className="text-xs text-neutral-500">DHA Phase 6, Karachi • +92 300 1234567</p>

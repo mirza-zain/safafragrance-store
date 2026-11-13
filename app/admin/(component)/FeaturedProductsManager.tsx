@@ -1,16 +1,14 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { 
   Star, 
-  ArrowLeft, 
-  ArrowRight, 
   X, 
   Plus, 
   Check, 
   Search,
-  Sparkles
+  Loader2,
 } from "lucide-react";
 
 export type AdminProduct = {
@@ -30,79 +28,91 @@ type Props = {
 
 export default function FeaturedProductsManager({ allProducts, onFeaturedUpdated }: Props) {
   const [slots, setSlots] = useState<(AdminProduct | null)[]>([null, null, null, null]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const onFeaturedUpdatedRef = useRef(onFeaturedUpdated);
+  useEffect(() => {
+    onFeaturedUpdatedRef.current = onFeaturedUpdated;
+  }, [onFeaturedUpdated]);
+
   useEffect(() => {
     async function loadFeatured() {
       try {
-        setLoading(true);
-        const res = await fetch("/api/featured-products");
+        const res = await fetch("/api/featured-products", { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to load featured products");
         const data = await res.json();
         const loaded: AdminProduct[] = data.featuredProducts || [];
 
         const newSlots: (AdminProduct | null)[] = [null, null, null, null];
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < loaded.length && i < 4; i++) {
           newSlots[i] = loaded[i] || null;
         }
         setSlots(newSlots);
-        if (onFeaturedUpdated) {
-          onFeaturedUpdated(newSlots.filter(Boolean).map(p => p!.id));
-        }
+        onFeaturedUpdatedRef.current?.(newSlots.filter(Boolean).map(p => p!.id));
       } catch (err) {
         console.error("Error loading featured slots:", err);
-      } finally {
-        setLoading(false);
       }
     }
 
     loadFeatured();
   }, []);
 
+  const saveFeaturedProducts = async (nextSlots: (AdminProduct | null)[]) => {
+    try {
+      setSaving(true);
+      const featuredProductIds = nextSlots.filter(Boolean).map(p => p!.id);
+      const res = await fetch("/api/featured-products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ featuredProductIds })
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Failed to save featured products");
+      }
+
+      const data = await res.json();
+      const loaded: AdminProduct[] = data.featuredProducts || [];
+      const updatedSlots: (AdminProduct | null)[] = [null, null, null, null];
+      for (let i = 0; i < loaded.length && i < 4; i++) {
+        updatedSlots[i] = loaded[i] || null;
+      }
+      setSlots(updatedSlots);
+      setHasChanges(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      onFeaturedUpdatedRef.current?.(featuredProductIds);
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : "Error saving featured showcase");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSelectProduct = (product: AdminProduct) => {
     if (activeSlotIndex === null) return;
     const newSlots = [...slots];
     newSlots[activeSlotIndex] = product;
     setSlots(newSlots);
-    setHasChanges(true);
     setActiveSlotIndex(null);
     setSearchQuery("");
+    void saveFeaturedProducts(newSlots);
   };
 
   const handleRemoveSlot = (index: number) => {
     const newSlots = [...slots];
     newSlots[index] = null;
     setSlots(newSlots);
-    setHasChanges(true);
+    void saveFeaturedProducts(newSlots);
   };
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      const featuredProductIds = slots.filter(Boolean).map(p => p!.id);
-      const res = await fetch("/api/featured-products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ featuredProductIds })
-      });
-      if (!res.ok) throw new Error("Failed to save featured products");
-
-      setHasChanges(false);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-      if (onFeaturedUpdated) {
-        onFeaturedUpdated(featuredProductIds);
-      }
-    } catch (err) {
-      alert("Error saving featured showcase");
-    } finally {
-      setSaving(false);
-    }
+  const handleSave = () => {
+    void saveFeaturedProducts(slots);
   };
 
   const availableProducts = allProducts.filter(
@@ -129,17 +139,18 @@ export default function FeaturedProductsManager({ allProducts, onFeaturedUpdated
 
         <div className="flex items-center gap-3">
           {saveSuccess && (
-            <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+            <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 animate-in fade-in">
               <Check className="size-3.5" />
               <span>Saved successfully</span>
             </span>
           )}
           <button
             onClick={handleSave}
-            disabled={saving || !hasChanges}
-            className="px-4 py-2 bg-black hover:bg-neutral-800 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition"
+            disabled={saving || (!hasChanges && !saveSuccess)}
+            className="px-4 py-2 bg-black hover:bg-neutral-800 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition flex items-center gap-1.5"
           >
-            {saving ? "Saving..." : "Save Showcase"}
+            {saving && <Loader2 className="size-3 animate-spin" />}
+            <span>{saving ? "Saving..." : "Save Showcase"}</span>
           </button>
         </div>
       </div>
@@ -160,7 +171,9 @@ export default function FeaturedProductsManager({ allProducts, onFeaturedUpdated
               </span>
               {slot && (
                 <button
+                  type="button"
                   onClick={() => handleRemoveSlot(idx)}
+                  title="Remove from slot"
                   className="text-neutral-400 hover:text-red-600 p-1 rounded-md transition"
                 >
                   <X className="size-3.5" />
@@ -171,7 +184,16 @@ export default function FeaturedProductsManager({ allProducts, onFeaturedUpdated
             {slot ? (
               <div className="space-y-3">
                 <div className="relative h-28 w-full rounded-lg overflow-hidden bg-white border border-neutral-200">
-                  <Image src={slot.image} alt={slot.name} fill className="object-cover" />
+                  <Image
+                    src={slot.image || "/images/safaPerfume.png"}
+                    alt={slot.name}
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                    onError={(event) => {
+                      event.currentTarget.src = "/images/safaPerfume.png";
+                    }}
+                  />
                 </div>
                 <div>
                   <p className="font-bold text-xs text-neutral-900 truncate">{slot.name}</p>
@@ -220,18 +242,21 @@ export default function FeaturedProductsManager({ allProducts, onFeaturedUpdated
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 border border-neutral-200 rounded-xl text-xs focus:outline-none focus:border-black"
+                autoFocus
               />
             </div>
 
             <div className="max-h-72 overflow-y-auto divide-y divide-neutral-100">
               {filteredSelection.length === 0 ? (
-                <p className="py-8 text-center text-xs text-neutral-400">No matching fragrances available.</p>
+                <p className="py-8 text-center text-xs text-neutral-400">
+                  {allProducts.length === 0 ? "Loading products..." : "No matching fragrances available."}
+                </p>
               ) : (
                 filteredSelection.map(p => (
                   <div key={p.id} className="py-2.5 flex items-center justify-between gap-3 hover:bg-neutral-50 px-2 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="relative size-10 rounded-lg overflow-hidden border border-neutral-200 shrink-0">
-                        <Image src={p.image} alt={p.name} fill className="object-cover" />
+                        <Image src={p.image || "/images/safaPerfume.png"} alt={p.name} fill sizes="64px" className="object-cover" />
                       </div>
                       <div>
                         <p className="font-bold text-xs text-neutral-900">{p.name}</p>

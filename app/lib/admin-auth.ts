@@ -1,8 +1,6 @@
 import crypto from "node:crypto";
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
-export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@sufa.com";
-export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 export const COOKIE_NAME = "safa_admin_token";
 
 export function signAdminToken(email: string): string {
@@ -33,7 +31,7 @@ export function verifyAdminToken(token: string): boolean {
       return false;
     }
 
-    return email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    return Boolean(email);
   } catch {
     return false;
   }

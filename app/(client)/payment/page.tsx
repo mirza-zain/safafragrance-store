@@ -5,15 +5,13 @@ import Link from "next/link";
 import { useCart } from "@/app/context/CartContext";
 import React, { useEffect, useState } from "react";
 import { BANK_TRANSFER_CONFIG } from "@/app/lib/bank-details";
+import { COUNTRIES } from "@/app/lib/countries";
+import type { Order } from "@/app/lib/types";
 import {
   ShieldCheck,
-  Truck,
   Copy,
   Check,
   Upload,
-  AlertCircle,
-  ArrowRight,
-  Sparkles,
   Phone,
   CheckCircle2,
   Lock
@@ -24,7 +22,7 @@ type PaymentMethod = "cod" | "bank_transfer";
 export default function PaymentPage() {
   const { cart, clearCart, hasHydrated } = useCart();
   const [trackingId, setTrackingId] = useState<string | null>(null);
-  const [createdOrder, setCreatedOrder] = useState<any>(null);
+  const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
   const [discountCode, setDiscountCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
   const [pricingError, setPricingError] = useState("");
@@ -35,6 +33,7 @@ export default function PaymentPage() {
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [deliveryCharges, setDeliveryCharges] = useState<{ city: string; amount: number; active: boolean }[]>([]);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -42,21 +41,44 @@ export default function PaymentPage() {
     email: "",
     country: "Pakistan",
     phoneCountryCode: "+92",
+    customCountry: "",
+    customPhoneCountryCode: "",
     phoneNum: "",
     address: "",
     city: "Karachi"
   });
 
-  const isKarachi = formData.city.trim().toLowerCase() === "karachi";
+  const isPakistan = formData.country === "Pakistan";
+  const emailIsInvalid = formData.email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email.trim());
+  const phoneIsInvalid = formData.phoneNum.length > 0 && !/^\d{6,15}$/.test(formData.phoneNum);
+  const phoneCodeIsInvalid = formData.phoneCountryCode === "OTHER"
+    ? formData.customPhoneCountryCode.length > 0 && !/^\+\d{1,4}$/.test(formData.customPhoneCountryCode)
+    : !/^\+\d{1,4}$/.test(formData.phoneCountryCode);
+  const effectivePaymentMethod: PaymentMethod = isPakistan ? paymentMethod : "bank_transfer";
+  const submittedCountry = formData.country === "Other" ? formData.customCountry.trim() : formData.country;
+  const submittedPhoneCountryCode = formData.phoneCountryCode === "OTHER"
+    ? formData.customPhoneCountryCode.trim()
+    : formData.phoneCountryCode;
+  const pakistanCities = deliveryCharges
+    .filter((charge) => charge.active && !/other|default|nationwide/i.test(charge.city))
+    .map((charge) => charge.city);
+  const defaultDelivery = deliveryCharges.find((charge) => charge.active && /other|default|nationwide/i.test(charge.city));
+  const selectedDelivery = deliveryCharges.find(
+    (charge) => charge.active && isPakistan && charge.city.trim().toLowerCase() === formData.city.trim().toLowerCase()
+  );
+  const isKarachi = isPakistan && formData.city.trim().toLowerCase() === "karachi";
 
   useEffect(() => {
-    if (!isKarachi && paymentMethod === "cod") {
-      setPaymentMethod("bank_transfer");
-    }
-  }, [isKarachi, paymentMethod]);
+    fetch("/api/delivery-charges")
+      .then((response) => response.ok ? response.json() : [])
+      .then((charges) => setDeliveryCharges(Array.isArray(charges) ? charges : []))
+      .catch((error) => console.error("Delivery charge loading error:", error));
+  }, []);
 
   const subTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const deliveryAmount = isKarachi ? 0 : 250;
+  const deliveryAmount = isPakistan
+    ? Number(selectedDelivery?.amount ?? defaultDelivery?.amount ?? 250)
+    : Number(defaultDelivery?.amount ?? 250);
   const grandTotal = Math.max(0, subTotal - appliedDiscount + deliveryAmount);
 
   const handleCopy = async (text: string, field: string) => {
@@ -70,25 +92,21 @@ export default function PaymentPage() {
     if (!file) return;
 
     setUploadingReceipt(true);
-    const reader = new FileReader();
-    reader.onload = (uploadEvent) => {
-      setReceiptPreview(uploadEvent.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-
     try {
       const data = new FormData();
       data.append("file", file);
-      const res = await fetch("/api/upload", {
+      const res = await fetch("/api/upload/receipt", {
         method: "POST",
         body: data
       });
-      if (res.ok) {
-        const json = await res.json();
-        setPaymentReceipt(json.url);
-      }
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "Receipt upload failed");
+      setPaymentReceipt(json.url);
+      setReceiptPreview(json.url);
     } catch (err) {
-      console.error("Receipt upload error", err);
+      setPaymentReceipt("");
+      setReceiptPreview(null);
+      alert(err instanceof Error ? err.message : "Receipt upload failed");
     } finally {
       setUploadingReceipt(false);
     }
@@ -105,6 +123,7 @@ export default function PaymentPage() {
         body: JSON.stringify({
           items: cart,
           city: formData.city,
+          country: formData.country,
           discountCode: discountCode.trim().toUpperCase()
         })
       });
@@ -124,7 +143,30 @@ export default function PaymentPage() {
     e.preventDefault();
     if (cart.length === 0) return;
 
-    if (paymentMethod === "bank_transfer" && !paymentReceipt && !receiptPreview) {
+    const email = formData.email.trim();
+    const phone = formData.phoneNum.trim();
+    const country = submittedCountry;
+    const phoneCode = submittedPhoneCountryCode;
+    const city = formData.city.trim();
+    const address = formData.address.trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+    if (!/^\+\d{1,4}$/.test(phoneCode)) {
+      alert("Please select or enter a valid phone country code.");
+      return;
+    }
+    if (!/^\d{6,15}$/.test(phone)) {
+      alert("Please enter a valid phone number with 6 to 15 digits.");
+      return;
+    }
+    if (!country || city.length < 2 || address.length < 10) {
+      alert("Please provide a valid country, city, and complete street address.");
+      return;
+    }
+    if (effectivePaymentMethod === "bank_transfer" && !paymentReceipt) {
       alert("Please upload your bank transfer payment receipt or screenshot to proceed.");
       return;
     }
@@ -136,7 +178,13 @@ export default function PaymentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          paymentMethod,
+          email,
+          phoneNum: phone,
+          address,
+          city,
+          country: submittedCountry,
+          phoneCountryCode: submittedPhoneCountryCode,
+          paymentMethod: effectivePaymentMethod,
           paymentReceipt: paymentReceipt || receiptPreview || undefined,
           discountCode: appliedDiscount > 0 ? discountCode.toUpperCase() : undefined,
           items: cart.map((item) => ({
@@ -347,18 +395,51 @@ export default function PaymentPage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    aria-invalid={emailIsInvalid}
+                    aria-describedby={emailIsInvalid ? "email-error" : undefined}
                     placeholder="zubair@example.com"
-                    className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431]"
+                    className={`w-full px-4 py-3 rounded-xl border bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431] ${
+                      emailIsInvalid ? "border-red-400" : "border-[#e5dbc7]"
+                    }`}
                   />
+                  {emailIsInvalid && (
+                    <p id="email-error" className="mt-1.5 text-xs font-medium text-red-600">
+                      Enter a complete email address, like name@example.com.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">
                     Phone / WhatsApp Number *
                   </label>
                   <div className="flex">
-                    <span className="inline-flex items-center px-3.5 rounded-l-xl border border-r-0 border-[#e5dbc7] bg-[#f0e8d9] text-xs font-bold text-neutral-700">
-                      +92
-                    </span>
+                    <select
+                      value={formData.phoneCountryCode}
+                      onChange={(e) => setFormData({ ...formData, phoneCountryCode: e.target.value })}
+                      className={`rounded-l-xl border border-r-0 bg-[#f0e8d9] px-2 text-xs font-bold text-neutral-700 focus:outline-hidden ${
+                        phoneCodeIsInvalid ? "border-red-400" : "border-[#e5dbc7]"
+                      }`}
+                      aria-label="Phone country code"
+                    >
+                      {COUNTRIES.map((country) => (
+                        <option key={`${country.name}-${country.code}`} value={country.code}>
+                          {country.code}{country.name === "Pakistan" ? " PK" : ""}
+                        </option>
+                      ))}
+                      <option value="OTHER">Other phone code</option>
+                    </select>
+                    {formData.phoneCountryCode === "OTHER" && (
+                      <input
+                        required
+                        type="text"
+                        value={formData.customPhoneCountryCode}
+                        onChange={(e) => setFormData({ ...formData, customPhoneCountryCode: e.target.value.replace(/[^\d+]/g, "").slice(0, 6) })}
+                        placeholder="+000"
+                        aria-invalid={phoneCodeIsInvalid}
+                        className="w-20 border border-[#e5dbc7] bg-[#faf7f2] px-2 text-sm focus:outline-hidden focus:border-[#1b4431]"
+                        aria-label="Custom phone country code"
+                      />
+                    )}
                     <input
                       type="tel"
                       required
@@ -366,13 +447,22 @@ export default function PaymentPage() {
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          phoneNum: e.target.value.replace(/\D/g, "").slice(0, 10)
+                          phoneNum: e.target.value.replace(/\D/g, "").slice(0, 15)
                         })
                       }
+                      aria-invalid={phoneIsInvalid}
+                      aria-describedby={phoneIsInvalid ? "phone-error" : undefined}
                       placeholder="3001234567"
-                      className="w-full px-4 py-3 rounded-r-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431]"
+                      className={`w-full px-4 py-3 rounded-r-xl border bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431] ${
+                        phoneIsInvalid ? "border-red-400" : "border-[#e5dbc7]"
+                      }`}
                     />
                   </div>
+                  {phoneIsInvalid && (
+                    <p id="phone-error" className="mt-1.5 text-xs font-medium text-red-600">
+                      Enter 6 to 15 digits.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -391,35 +481,45 @@ export default function PaymentPage() {
                   <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">
                     City *
                   </label>
-                  <select
+                  {isPakistan && formData.city !== "Other" ? <select
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm font-medium focus:outline-hidden focus:border-[#1b4431]"
                   >
-                    <option value="Karachi">Karachi (Cash on Delivery & Bank Transfer)</option>
-                    <option value="Lahore">Lahore (Bank Transfer Nationwide Express)</option>
-                    <option value="Islamabad">Islamabad (Bank Transfer Nationwide Express)</option>
-                    <option value="Rawalpindi">Rawalpindi (Bank Transfer Nationwide Express)</option>
-                    <option value="Faisalabad">Faisalabad (Bank Transfer Nationwide Express)</option>
-                    <option value="Multan">Multan (Bank Transfer Nationwide Express)</option>
-                    <option value="Peshawar">Peshawar (Bank Transfer Nationwide Express)</option>
-                    <option value="Quetta">Quetta (Bank Transfer Nationwide Express)</option>
-                    <option value="Sialkot">Sialkot (Bank Transfer Nationwide Express)</option>
-                    <option value="Gujranwala">Gujranwala (Bank Transfer Nationwide Express)</option>
-                    <option value="Hyderabad">Hyderabad (Bank Transfer Nationwide Express)</option>
+                    {pakistanCities.length > 0 ? pakistanCities.map((city) => <option key={city} value={city}>{city}</option>) : <option value="Karachi">Karachi</option>}
                     <option value="Other">Other City / District</option>
-                  </select>
+                  </select> : <input
+                    required
+                    value={isPakistan && formData.city === "Other" ? "" : formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder={isPakistan ? "Enter your Pakistani city or district" : "Enter your city"}
+                    className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm font-medium focus:outline-hidden focus:border-[#1b4431]"
+                  />}
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">
                     Country
                   </label>
-                  <input
-                    type="text"
-                    disabled
-                    value="Pakistan"
+                  <select
+                    value={formData.country}
+                    onChange={(e) => {
+                      const country = COUNTRIES.find((item) => item.name === e.target.value);
+                      setFormData({ ...formData, country: e.target.value, phoneCountryCode: country?.code || (e.target.value === "Other" ? "OTHER" : "+92"), city: e.target.value === "Pakistan" ? (pakistanCities[0] || "Karachi") : "" });
+                    }}
                     className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-neutral-100 text-sm font-semibold text-neutral-600"
-                  />
+                  >
+                    {COUNTRIES.map((country) => <option key={country.name} value={country.name}>{country.name}</option>)}
+                    <option value="Other">Other / not listed</option>
+                  </select>
+                  {formData.country === "Other" && (
+                    <input
+                      required
+                      value={formData.customCountry}
+                      onChange={(e) => setFormData({ ...formData, customCountry: e.target.value })}
+                      placeholder="Enter your country"
+                      className="mt-2 w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm font-medium focus:outline-hidden focus:border-[#1b4431]"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -452,7 +552,7 @@ export default function PaymentPage() {
                 <div
                   onClick={() => isKarachi && setPaymentMethod("cod")}
                   className={`p-5 rounded-2xl border transition cursor-pointer relative ${
-                    paymentMethod === "cod"
+                    effectivePaymentMethod === "cod"
                       ? "border-[#1b4431] bg-[#faf7f2] ring-1 ring-[#1b4431]"
                       : isKarachi
                       ? "border-[#e5dbc7] bg-white hover:border-[#1b4431]"
@@ -464,7 +564,7 @@ export default function PaymentPage() {
                     <input
                       type="radio"
                       name="paymentMethod"
-                      checked={paymentMethod === "cod"}
+                      checked={effectivePaymentMethod === "cod"}
                       disabled={!isKarachi}
                       onChange={() => setPaymentMethod("cod")}
                       className="size-4 text-[#1b4431]"
@@ -482,7 +582,7 @@ export default function PaymentPage() {
                 <div
                   onClick={() => setPaymentMethod("bank_transfer")}
                   className={`p-5 rounded-2xl border transition cursor-pointer relative ${
-                    paymentMethod === "bank_transfer"
+                    effectivePaymentMethod === "bank_transfer"
                       ? "border-[#1b4431] bg-[#faf7f2] ring-1 ring-[#1b4431]"
                       : "border-[#e5dbc7] bg-white hover:border-[#1b4431]"
                   }`}
@@ -492,7 +592,7 @@ export default function PaymentPage() {
                     <input
                       type="radio"
                       name="paymentMethod"
-                      checked={paymentMethod === "bank_transfer"}
+                      checked={effectivePaymentMethod === "bank_transfer"}
                       onChange={() => setPaymentMethod("bank_transfer")}
                       className="size-4 text-[#1b4431]"
                     />
@@ -507,7 +607,7 @@ export default function PaymentPage() {
               </div>
 
               {/* Bank Details Display Card */}
-              {paymentMethod === "bank_transfer" && (
+              {effectivePaymentMethod === "bank_transfer" && (
                 <div className="p-6 rounded-2xl bg-[#f5efe3] border border-[#e5dbc7] space-y-4 animate-in fade-in">
                   <div className="flex items-center justify-between border-b border-[#e5dbc7] pb-3">
                     <div className="flex items-center gap-2">
@@ -574,7 +674,13 @@ export default function PaymentPage() {
                       <div className="relative p-4 rounded-xl bg-white border border-emerald-300 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="relative size-14 rounded-lg overflow-hidden border border-neutral-200">
-                            <Image src={receiptPreview} alt="Receipt Preview" fill className="object-cover" />
+                            <Image
+                              src={receiptPreview}
+                              alt="Receipt Preview"
+                              fill
+                              sizes="56px"
+                              className="object-cover"
+                            />
                           </div>
                           <div>
                             <p className="text-xs font-bold text-emerald-800">Payment Proof Attached</p>
@@ -621,7 +727,7 @@ export default function PaymentPage() {
             >
               {submitting
                 ? "Securing Your Order..."
-                : paymentMethod === "cod"
+                : effectivePaymentMethod === "cod"
                 ? `Confirm Cash on Delivery • Rs. ${grandTotal.toLocaleString()}`
                 : `Submit Order with Payment Proof • Rs. ${grandTotal.toLocaleString()}`}
             </button>
@@ -639,7 +745,7 @@ export default function PaymentPage() {
             {cart.map((item) => (
               <div key={`${item.id}-${item.variantLabel}`} className="flex items-center gap-3.5 pb-3 border-b border-neutral-100">
                 <div className="relative size-16 rounded-xl overflow-hidden bg-[#faf7f2] border border-[#eee6d7] shrink-0">
-                  <Image src={item.image} alt={item.name} fill className="object-cover" />
+                  <Image src={item.image} alt={item.name} fill sizes="64px" className="object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="text-xs font-bold text-neutral-900 truncate">{item.name}</h4>
@@ -668,7 +774,7 @@ export default function PaymentPage() {
             <div className="flex justify-between text-neutral-600">
               <span>Delivery Charges</span>
               <span className="font-semibold text-neutral-900">
-                {deliveryAmount === 0 ? "FREE (Karachi)" : `Rs. ${deliveryAmount.toLocaleString()}`}
+                {deliveryAmount === 0 ? "FREE" : `Rs. ${deliveryAmount.toLocaleString()}`}
               </span>
             </div>
             {appliedDiscount > 0 && (
@@ -715,4 +821,3 @@ export default function PaymentPage() {
     </main>
   );
 }
-

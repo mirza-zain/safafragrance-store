@@ -1,0 +1,12 @@
+[
+  {
+    "endpoint": "https://updates.push.services.mozilla.com/wpush/v2/gAAAAABq94H-UMzvRILWLMw5BHCzDxEDWGJzg1vPt4tKAl8IEJ_p4oT5PguX_yi1IPWg7Wk2Yy5bLr5xzVkCT8gL-j_C3Jma3XFC-l9u7wBZfZY3UlCDJmITgQy-Nwfitk9JgohlYT5yqkrA6NL9ff9aclV-VHa_stkMwkkSbjtGgXvErr-Wd4A",
+    "expirationTime": null,
+    "keys": {
+      "auth": "ls7SU-zkZObJ8VP0m3N8lQ",
+      "p256dh": "BDE2DEy_3gmXx47rDFiXhSb6HSQRhjygnu1fojeEx4SguUbRwNgYxpVacftF0SkXQFqvToRLYXD8pz6avjqLJY8"
+    },
+    "createdAt": "2026-11-13T21:32:48.335Z",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:160.0) Gecko/20100101 Firefox/160.0"
+  }
+]

@@ -43,7 +43,7 @@ export default function InteractiveSprayBottle() {
   // Reactive state for rendering fluid surface
   const [fluidTilt, setFluidTilt] = useState(0);
   const [wavePhase, setWavePhase] = useState(0);
-  const [glarePos, setGlarePos] = useState({ x: 50, y: 50, opacity: 0.3 });
+  const [, setGlarePos] = useState({ x: 50, y: 50, opacity: 0.3 });
 
   // Internal bubbles inside liquid (strictly bounded by clip-path)
   const [bubbles, setBubbles] = useState<

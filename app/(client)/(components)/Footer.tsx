@@ -15,6 +15,7 @@ export default function Footer() {
                 src="/logo-gold.png"
                 alt="Safa Fragrance"
                 fill
+                sizes="(max-width: 640px) 224px, 256px"
                 className="object-contain object-center md:object-left"
                 priority
               />
