@@ -366,7 +366,7 @@ export default function PaymentPage() {
                     required
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    placeholder="e.g. Zubair"
+                    placeholder="e.g. Mirza"
                     className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431]"
                   />
                 </div>
@@ -379,7 +379,7 @@ export default function PaymentPage() {
                     required
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    placeholder="e.g. Ahmed"
+                    placeholder="e.g. Zain"
                     className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431]"
                   />
                 </div>
@@ -397,7 +397,7 @@ export default function PaymentPage() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     aria-invalid={emailIsInvalid}
                     aria-describedby={emailIsInvalid ? "email-error" : undefined}
-                    placeholder="zubair@example.com"
+                    placeholder="mirza@example.com"
                     className={`w-full px-4 py-3 rounded-xl border bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431] ${
                       emailIsInvalid ? "border-red-400" : "border-[#e5dbc7]"
                     }`}

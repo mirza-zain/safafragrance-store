@@ -7,7 +7,7 @@ const STORE_FILE = path.join(DATA_DIR, "store.json");
 
 const INITIAL_PRODUCTS: Product[] = [];
 
-const INITIAL_DISCOUNTS: DiscountCode[] = [
+const INITIAL_DISCOUNTS: DiscountCode[] = [];
   {
     id: 1,
     code: "SAFA10",

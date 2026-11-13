@@ -62,6 +62,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [cart, hasHydrated]);
 
   const addToCart = (product: AddProductInput, variantLabel?: string, qtyToAdd: number = 1) => {
+    // Do not add items that are out of stock
+    if (product.stock <= 0) {
+      console.warn(`Attempted to add out‑of‑stock product (id: ${product.id}) to cart`);
+      return;
+    }
     const finalVariant = variantLabel || product.variantLabel;
     setCart((current) => {
       const existingIndex = current.findIndex(
