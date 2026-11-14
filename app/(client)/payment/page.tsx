@@ -54,7 +54,9 @@ export default function PaymentPage() {
   const phoneCodeIsInvalid = formData.phoneCountryCode === "OTHER"
     ? formData.customPhoneCountryCode.length > 0 && !/^\+\d{1,4}$/.test(formData.customPhoneCountryCode)
     : !/^\+\d{1,4}$/.test(formData.phoneCountryCode);
-  const effectivePaymentMethod: PaymentMethod = isPakistan ? paymentMethod : "bank_transfer";
+  const effectivePaymentMethod: PaymentMethod = isPakistan && formData.city.trim().toLowerCase() === "karachi"
+    ? paymentMethod
+    : "bank_transfer";
   const submittedCountry = formData.country === "Other" ? formData.customCountry.trim() : formData.country;
   const submittedPhoneCountryCode = formData.phoneCountryCode === "OTHER"
     ? formData.customPhoneCountryCode.trim()
@@ -483,7 +485,11 @@ export default function PaymentPage() {
                   </label>
                   {isPakistan && formData.city !== "Other" ? <select
                     value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    onChange={(e) => {
+                      const city = e.target.value;
+                      setFormData({ ...formData, city });
+                      if (city.trim().toLowerCase() !== "karachi") setPaymentMethod("bank_transfer");
+                    }}
                     className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm font-medium focus:outline-hidden focus:border-[#1b4431]"
                   >
                     {pakistanCities.length > 0 ? pakistanCities.map((city) => <option key={city} value={city}>{city}</option>) : <option value="Karachi">Karachi</option>}
@@ -491,7 +497,11 @@ export default function PaymentPage() {
                   </select> : <input
                     required
                     value={isPakistan && formData.city === "Other" ? "" : formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    onChange={(e) => {
+                      const city = e.target.value;
+                      setFormData({ ...formData, city });
+                      if (city.trim().toLowerCase() !== "karachi") setPaymentMethod("bank_transfer");
+                    }}
                     placeholder={isPakistan ? "Enter your Pakistani city or district" : "Enter your city"}
                     className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-[#faf7f2] text-sm font-medium focus:outline-hidden focus:border-[#1b4431]"
                   />}
@@ -504,7 +514,12 @@ export default function PaymentPage() {
                     value={formData.country}
                     onChange={(e) => {
                       const country = COUNTRIES.find((item) => item.name === e.target.value);
-                      setFormData({ ...formData, country: e.target.value, phoneCountryCode: country?.code || (e.target.value === "Other" ? "OTHER" : "+92"), city: e.target.value === "Pakistan" ? (pakistanCities[0] || "Karachi") : "" });
+                      const nextCountry = e.target.value;
+                      const nextCity = nextCountry === "Pakistan" ? (pakistanCities[0] || "Karachi") : "";
+                      setFormData({ ...formData, country: nextCountry, phoneCountryCode: country?.code || (nextCountry === "Other" ? "OTHER" : "+92"), city: nextCity });
+                      if (nextCountry !== "Pakistan" || nextCity.trim().toLowerCase() !== "karachi") {
+                        setPaymentMethod("bank_transfer");
+                      }
                     }}
                     className="w-full px-4 py-3 rounded-xl border border-[#e5dbc7] bg-neutral-100 text-sm font-semibold text-neutral-600"
                   >
