@@ -22,7 +22,7 @@ export default function Blog() {
       <div className="w-full lg:w-1/2 flex items-center justify-center">
         <div className="relative w-full max-h-[460px] lg:max-h-[520px] aspect-4/3 overflow-hidden rounded-3xl shadow-lg border border-[#e7decb] bg-[#faf7f2] flex items-center justify-center p-6">
           <Image
-            src="/images/safaPerfume.png"
+            src="/images/sidebanner.png"
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-contain"
