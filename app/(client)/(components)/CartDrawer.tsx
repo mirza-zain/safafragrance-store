@@ -30,17 +30,17 @@ export default function CartDrawer() {
         className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-[#faf7f2] border-l border-[#e7decb] shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300">
+      <div className="fixed inset-y-0 right-0 w-full max-w-full flex sm:w-auto sm:pl-10">
+        <div className="w-full sm:w-screen max-w-md bg-[#faf7f2] border-l border-[#e7decb] shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300">
           {/* Header */}
-          <div className="p-5 sm:p-6 border-b border-[#e7decb] bg-white/70 backdrop-blur-sm">
+          <div className="p-4 sm:p-6 border-b border-[#e7decb] bg-white/70 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="size-8 rounded-full bg-[#1b4431] text-[#d8c38c] flex items-center justify-center">
                   <ShoppingBag size={16} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold tracking-tight text-neutral-900 font-serif">Your Fragrance Bag</h2>
+                  <h2 className="text-base sm:text-lg font-bold tracking-tight text-neutral-900 font-serif">Your Fragrance Bag</h2>
                   <p className="text-xs text-neutral-500 font-medium">
                     {totalItems} {totalItems === 1 ? "edition" : "editions"} selected
                   </p>
@@ -57,7 +57,7 @@ export default function CartDrawer() {
           </div>
 
           {/* Cart Items List */}
-          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+          <div className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 space-y-4">
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center py-12">
                 <div className="size-20 rounded-full bg-white border border-[#e7decb] flex items-center justify-center shadow-xs mb-4">
@@ -78,7 +78,7 @@ export default function CartDrawer() {
               cart.map((item) => (
                 <div
                   key={`${item.id}-${item.variantLabel}`}
-                  className="bg-white rounded-2xl p-4 border border-[#e8dfcf] shadow-xs flex gap-3.5 items-center"
+                  className="bg-white rounded-2xl p-3 sm:p-4 border border-[#e8dfcf] shadow-xs flex gap-2.5 sm:gap-3.5 items-center min-w-0"
                 >
                   <div className="relative size-20 rounded-xl overflow-hidden bg-[#faf7f2] border border-[#eee6d7] shrink-0">
                     <Image src={item.image} alt={item.name} fill sizes="80px" className="object-cover" />
@@ -96,7 +96,7 @@ export default function CartDrawer() {
                     </p>
                   </div>
 
-                  <div className="flex flex-col items-end justify-between gap-2">
+                  <div className="flex shrink-0 flex-col items-end justify-between gap-2">
                     <button
                       onClick={() => removeFromCart(item.id, item.variantLabel)}
                       className="text-neutral-400 hover:text-red-600 transition p-1"
@@ -129,7 +129,7 @@ export default function CartDrawer() {
 
           {/* Footer Checkout Summary */}
           {cart.length > 0 && (
-            <div className="p-5 sm:p-6 border-t border-[#e7decb] bg-white/90 backdrop-blur-md space-y-4">
+            <div className="p-4 sm:p-6 border-t border-[#e7decb] bg-white/90 backdrop-blur-md space-y-4">
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between text-neutral-600">
                   <span>Subtotal</span>
@@ -137,13 +137,13 @@ export default function CartDrawer() {
                 </div>
                 <div className="flex justify-between text-neutral-600 text-xs">
                   <span>Estimated Delivery</span>
-                  <span>Calculated at checkout</span>
+                  <span className="max-w-[55%] text-right">Calculated at checkout</span>
                 </div>
               </div>
 
               <div className="pt-2 border-t border-neutral-100 flex justify-between items-baseline">
                 <span className="font-bold text-neutral-900 font-sans uppercase tracking-wider text-sm">Total</span>
-                <span className="text-xl font-black text-neutral-900">Rs. {subtotal.toLocaleString()}</span>
+                <span className="text-lg sm:text-xl font-black text-neutral-900">Rs. {subtotal.toLocaleString()}</span>
               </div>
 
               <div className="flex flex-col gap-2 pt-1">

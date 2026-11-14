@@ -15,9 +15,9 @@ What changed vs the previous version (all aimed at the website, not Cycles rende
   * Glass body is a hollow shell with a solid crystal base, liquid is a lighter champagne
     gold (the old cognac orange read as a tin can).
   * Orifice no longer uses the logo decal (it was invisible).
-  * Spray scale starts at 0.001 (zero scale breaks matrices in three.js).
   * Everything exports as ONE animation clip (frames 1-90) so the site only plays one clip.
-  * Fewer, softer petals and leaves, no orange rose core.
+  * Decorative flowers and mist are omitted because the website renders these effects itself.
+  * Crown finials use smooth 32-sided geometry instead of visibly faceted 8-sided cones.
 """
 
 import bpy
@@ -37,7 +37,6 @@ DECAL_CANDIDATES = [
 EXPORT_TARGETS = [
     os.path.join(PROJECT_DIR, "public/models/safa_perfume_flacon.glb"),
     os.path.join(PROJECT_DIR, "public/models/safa_perfume_v3.glb"),
-    os.path.join(PROJECT_DIR, "public/models/safa_perfume_v2.glb"),
     os.path.expanduser("~/Desktop/safa_perfume_flacon.glb"),
 ]
 FLIP_LOGO_U = False   # set True if the logo still appears mirrored on the bottle
@@ -311,17 +310,7 @@ def build_perfume():
     dark_mat    = make_material("Safa_Orifice", (0.05, 0.04, 0.03, 1.0), metallic=1.0, roughness=0.4)
     jewel_mat   = make_material("Safa_Crown_Jewel", (0.10, 0.65, 0.55, 1.0), roughness=0.05, ior=1.65,
                                 emission=(0.10, 0.65, 0.55, 1.0), emission_strength=0.4)
-    mist_mat    = make_material("Safa_Mist", (1.0, 0.92, 0.72, 1.0), roughness=0.2, alpha=0.28,
-                                emission=(1.0, 0.88, 0.55, 1.0), emission_strength=0.8)
     decal_mat   = make_decal_material()
-
-    rose_core   = make_material("Rose_Blush_Core",  (0.70, 0.10, 0.22, 1.0), roughness=0.55)
-    rose_outer  = make_material("Rose_Blush_Outer", (0.90, 0.35, 0.48, 1.0), roughness=0.55)
-    ivory_core  = make_material("Rose_Ivory_Core",  (0.93, 0.80, 0.68, 1.0), roughness=0.55)
-    ivory_outer = make_material("Rose_Ivory_Outer", (0.92, 0.86, 0.82, 1.0), roughness=0.55)
-    leaf_mat    = make_material("Rose_Leaf",        (0.06, 0.30, 0.12, 1.0), roughness=0.5)
-    for m in (rose_core, rose_outer, ivory_core, ivory_outer, leaf_mat):
-        m.use_backface_culling = False
 
     master = bpy.data.objects.new("Safa_Hero_Flacon_Scene", None)
     bpy.context.collection.objects.link(master)
@@ -355,36 +344,6 @@ def build_perfume():
     orifice = add_cylinder("Safa_Spray_Orifice", 0.038, 0.08, (0, -0.30, 4.38), dark_mat, master, verts=16)
     orifice.rotation_euler = (math.radians(90), 0, 0)
 
-    # ---- spray mist ----
-    spray = bpy.data.objects.new("Safa_Spray_Mist_Plume", None)
-    spray.location = (0, -0.32, 4.38)
-    spray.parent = master
-    bpy.context.collection.objects.link(spray)
-
-    bpy.ops.mesh.primitive_cone_add(vertices=32, radius1=0.04, radius2=0.75, depth=1.8, location=(0.45, -0.85, 0.25))
-    cone = bpy.context.active_object
-    cone.name = "Mist_Spray_Cone"
-    cone.rotation_euler = (math.radians(-65), math.radians(15), math.radians(-25))
-    cone.data.materials.append(mist_mat)
-    cone.parent = spray
-    shade_smooth(cone)
-
-    droplets = [(0.2, -0.4, 0.05, 0.025), (0.4, -0.7, 0.15, 0.035), (0.6, -1.0, 0.22, 0.040),
-                (0.8, -1.3, 0.32, 0.045), (0.3, -0.8, -0.05, 0.030), (0.5, -1.1, 0.10, 0.038),
-                (0.7, -1.4, 0.18, 0.042), (0.9, -1.6, 0.28, 0.048), (0.35, -0.6, 0.20, 0.032),
-                (0.55, -0.9, 0.28, 0.036), (0.75, -1.2, 0.35, 0.044), (1.05, -1.5, 0.40, 0.050)]
-    for i, (dx, dy, dz, r) in enumerate(droplets):
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=r, location=(dx, dy, dz))
-        d = bpy.context.active_object
-        d.name = f"Mist_Droplet_{i}"
-        d.data.materials.append(mist_mat)
-        d.parent = spray
-        shade_smooth(d)
-
-    for frame, s in ((1, 0.001), (34, 0.001), (36, 0.5), (45, 1.4), (56, 2.0), (58, 0.001), (END_FRAME, 0.001)):
-        spray.scale = (s, s, s)
-        key(spray, "scale", frame)
-
     # ---- crown ----
     crown = bpy.data.objects.new("Safa_Royal_Crown_Cap", None)
     crown.parent = master
@@ -409,12 +368,12 @@ def build_perfume():
         shade_smooth(pearl)
 
     add_cylinder("Crown_Finial_Base", 0.22, 0.25, (0, 0, 5.42), gold_mat, crown, verts=32)
-    bpy.ops.mesh.primitive_cone_add(vertices=8, radius1=0.14, radius2=0.0, depth=0.35, location=(0, 0, 5.68))
+    bpy.ops.mesh.primitive_cone_add(vertices=32, radius1=0.14, radius2=0.0, depth=0.35, location=(0, 0, 5.68))
     jt = bpy.context.active_object
     jt.name = "Crown_Apex_Jewel"
     jt.data.materials.append(jewel_mat)
     jt.parent = crown
-    bpy.ops.mesh.primitive_cone_add(vertices=8, radius1=0.14, radius2=0.0, depth=0.18, location=(0, 0, 5.50))
+    bpy.ops.mesh.primitive_cone_add(vertices=32, radius1=0.14, radius2=0.0, depth=0.18, location=(0, 0, 5.50))
     jb = bpy.context.active_object
     jb.name = "Crown_Apex_Jewel_Base"
     jb.rotation_euler = (math.radians(180), 0, 0)
@@ -426,43 +385,6 @@ def build_perfume():
         crown.rotation_euler = (math.radians(rx), 0, 0)
         key(crown, "location", frame)
         key(crown, "rotation_euler", frame)
-
-    # ---- roses (pushed outward so they don't crowd the base) ----
-    create_rose("Rose_Blush_Left", (-2.05, -0.65, 0.40), 1.1,
-                (math.radians(25), math.radians(-15), math.radians(40)), rose_core, rose_outer, leaf_mat)
-    create_rose("Rose_Ivory_Right", (2.10, -0.55, 0.35), 1.05,
-                (math.radians(20), math.radians(20), math.radians(-30)), ivory_core, ivory_outer, leaf_mat)
-
-    floor_petals = [((-0.75, -1.6, 0.02), (0.05, 0.08, 0.6), 0.95, rose_outer),
-                    ((0.65, -1.7, 0.02), (-0.06, 0.04, -0.8), 0.9, rose_core),
-                    ((1.45, -1.2, 0.02), (0.04, -0.07, 1.2), 1.1, ivory_outer),
-                    ((-1.35, -1.3, 0.02), (-0.03, 0.06, -1.4), 1.05, rose_outer),
-                    ((0.08, -1.95, 0.02), (0.02, 0.05, 0.2), 0.85, rose_core)]
-    for i, (loc, rot, sc, mat) in enumerate(floor_petals):
-        p = create_single_petal_mesh(f"Floor_Petal_{i}", 0.45 * sc, 0.55 * sc, 0.1)
-        p.location, p.rotation_euler = loc, rot
-        p.data.materials.append(mat)
-        p.parent = master
-
-    air_petals = [((-1.5, -0.8, 3.2), (0.4, 0.3, 0.8), (0.15, -0.05, -0.25), rose_outer),
-                  ((1.4, -0.7, 3.9), (-0.3, 0.5, -0.6), (-0.2, 0.08, -0.3), rose_core),
-                  ((-0.8, -1.0, 4.6), (0.2, -0.4, 1.1), (0.1, 0.1, -0.2), ivory_outer),
-                  ((1.6, 0.3, 2.5), (-0.5, 0.2, -0.9), (-0.12, -0.08, -0.2), rose_outer),
-                  ((-1.7, 0.5, 2.2), (0.3, -0.5, 0.4), (0.18, 0.06, -0.22), rose_core)]
-    for i, (loc, rot, drift, mat) in enumerate(air_petals):
-        p = create_single_petal_mesh(f"Flowing_Petal_{i}", 0.42, 0.52, 0.14)
-        p.data.materials.append(mat)
-        p.parent = master
-        p.location, p.rotation_euler = loc, rot
-        key(p, "location", 1)
-        key(p, "rotation_euler", 1)
-        p.location = tuple(loc[k] + drift[k] for k in range(3))
-        p.rotation_euler = (rot[0] + 0.35, rot[1] + 0.25, rot[2] + 0.45)
-        key(p, "location", 45)
-        key(p, "rotation_euler", 45)
-        p.location, p.rotation_euler = loc, rot
-        key(p, "location", END_FRAME)
-        key(p, "rotation_euler", END_FRAME)
 
     # ---- preview lights + camera (not exported) ----
     def add_light(kind, loc, energy, rot=(0, 0, 0), size=None, color=(1, 0.97, 0.92)):
