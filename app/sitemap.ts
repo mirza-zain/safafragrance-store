@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { listNeonProducts } from "./lib/neon-products";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://safafragrance.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://safafragnance.com";
   const products = await listNeonProducts();
 
   const productUrls: MetadataRoute.Sitemap = products.map((product) => ({
