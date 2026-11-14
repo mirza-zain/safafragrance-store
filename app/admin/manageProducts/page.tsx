@@ -43,7 +43,7 @@ export default function ManageProductsPage() {
   useEffect(() => {
     async function getProducts() {
       try {
-        const response = await fetch("/api/product");
+        const response = await fetch("/api/product", { cache: "no-store" });
         if (!response.ok) throw new Error("Error fetching products");
         const data = await response.json();
         const list = Array.isArray(data) ? data : (data.products || []);
@@ -56,6 +56,8 @@ export default function ManageProductsPage() {
     }
 
     getProducts();
+    const refreshTimer = window.setInterval(getProducts, 5000);
+    return () => window.clearInterval(refreshTimer);
   }, []);
 
   const filteredProducts = products.filter((p) =>

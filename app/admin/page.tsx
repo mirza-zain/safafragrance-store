@@ -8,20 +8,19 @@ import { ArrowRight, BarChart3, Star } from "lucide-react";
 import { subscribeUserToPush } from "@/app/lib/push-client";
 
 export default function AdminDashboardPage() {
-  // Handle PWA install prompt
-  useEffect(() => {
-    const handler = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  // State to hold the install prompt event
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
+  // Handle PWA install prompt
+  useEffect(() => {
+    const handler = (event: Event) => {
+      event.preventDefault();
+      setDeferredPrompt(event as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -46,7 +45,7 @@ export default function AdminDashboardPage() {
     }
 
     loadData();
-    const refreshTimer = window.setInterval(loadData, 10000);
+    const refreshTimer = window.setInterval(loadData, 5000);
     return () => window.clearInterval(refreshTimer);
   }, []);
 
@@ -94,7 +93,7 @@ export default function AdminDashboardPage() {
                 onClick={() => {
                 if (deferredPrompt) {
                   deferredPrompt.prompt();
-                  deferredPrompt.userChoice.then((choice: any) => {
+                  deferredPrompt.userChoice.then((choice) => {
                     if (choice.outcome === 'accepted') {
                       console.log('User accepted the install prompt');
                     } else {

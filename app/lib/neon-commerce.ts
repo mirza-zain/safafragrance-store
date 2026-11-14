@@ -68,7 +68,7 @@ function getSql() {
 }
 
 async function withRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
-  let lastError: any;
+  let lastError: unknown;
   for (let i = 0; i <= retries; i++) {
     try {
       return await fn();
@@ -79,7 +79,7 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
       }
     }
   }
-  throw lastError;
+  throw lastError instanceof Error ? lastError : new Error("Database operation failed");
 }
 
 async function ensureCommerceTables() {

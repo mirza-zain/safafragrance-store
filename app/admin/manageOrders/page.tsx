@@ -58,7 +58,7 @@ export default function ManageOrders() {
     };
 
     fetchOrders();
-    const refreshTimer = window.setInterval(fetchOrders, 10000);
+    const refreshTimer = window.setInterval(fetchOrders, 5000);
     return () => window.clearInterval(refreshTimer);
   }, []);
 

@@ -57,6 +57,16 @@ async function ensureProductsTable() {
   await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS "featuredOrder" INTEGER DEFAULT NULL`;
 }
 
+let productsTableReady: Promise<void> | null = null;
+
+function ensureProductsTableOnce() {
+  productsTableReady ??= ensureProductsTable().catch((error) => {
+    productsTableReady = null;
+    throw error;
+  });
+  return productsTableReady;
+}
+
 function mapProduct(row: ProductRow): Product {
   return {
     id: row.id,
@@ -81,21 +91,21 @@ function mapProduct(row: ProductRow): Product {
 }
 
 export async function listNeonProducts() {
-  await ensureProductsTable();
+  await ensureProductsTableOnce();
   const sql = getSql();
   const rows = await sql`SELECT * FROM products ORDER BY id DESC`;
   return rows.map((row) => mapProduct(row as ProductRow));
 }
 
 export async function getNeonProduct(id: number) {
-  await ensureProductsTable();
+  await ensureProductsTableOnce();
   const sql = getSql();
   const rows = await sql`SELECT * FROM products WHERE id = ${id} LIMIT 1`;
   return rows.length ? mapProduct(rows[0] as ProductRow) : null;
 }
 
 export async function createNeonProduct(input: Omit<Product, "id">) {
-  await ensureProductsTable();
+  await ensureProductsTableOnce();
   const sql = getSql();
   const rows = await sql`
     INSERT INTO products (
@@ -115,7 +125,7 @@ export async function createNeonProduct(input: Omit<Product, "id">) {
 }
 
 export async function updateNeonProduct(id: number, input: Partial<Product>) {
-  await ensureProductsTable();
+  await ensureProductsTableOnce();
   const current = await getNeonProduct(id);
   if (!current) return null;
 
@@ -147,14 +157,14 @@ export async function updateNeonProduct(id: number, input: Partial<Product>) {
 }
 
 export async function deleteNeonProduct(id: number) {
-  await ensureProductsTable();
+  await ensureProductsTableOnce();
   const sql = getSql();
   const rows = await sql`DELETE FROM products WHERE id = ${id} RETURNING id`;
   return rows.length > 0;
 }
 
 export async function getNeonFeaturedProducts() {
-  await ensureProductsTable();
+  await ensureProductsTableOnce();
   const sql = getSql();
   const rows = await sql`
     SELECT * FROM products 
@@ -166,7 +176,7 @@ export async function getNeonFeaturedProducts() {
 }
 
 export async function setNeonFeaturedProducts(ids: number[]) {
-  await ensureProductsTable();
+  await ensureProductsTableOnce();
   const sql = getSql();
   await sql`UPDATE products SET "isFeatured" = FALSE, "featuredOrder" = NULL`;
   for (let index = 0; index < ids.length; index++) {
