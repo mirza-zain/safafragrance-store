@@ -32,16 +32,35 @@ export async function getNotificationPermissionStatus(): Promise<NotificationPer
   return Notification.permission;
 }
 
-export async function isPushSubscribed(): Promise<boolean> {
+export async function getPushStatus(): Promise<{
+  configured: boolean;
+  subscribed: boolean;
+  message?: string;
+}> {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-    return false;
+    return { configured: false, subscribed: false, message: 'Web push notifications are not supported in this browser.' };
   }
 
   const registration = await registerPushServiceWorker();
-  if (!registration) return false;
+  if (!registration) {
+    return { configured: false, subscribed: false, message: 'Could not register notification service worker.' };
+  }
 
   const subscription = await registration.pushManager.getSubscription();
-  return Boolean(subscription);
+  const endpoint = subscription?.endpoint || '';
+  const response = await fetch(`/api/notifications/subscribe?endpoint=${encodeURIComponent(endpoint)}`, {
+    cache: 'no-store',
+  });
+  if (!response.ok) {
+    return { configured: false, subscribed: false, message: 'Unable to verify notification settings.' };
+  }
+
+  const data = await response.json() as { configured?: boolean; subscribed?: boolean };
+  return {
+    configured: Boolean(data.configured),
+    subscribed: Boolean(data.subscribed),
+    message: data.configured ? undefined : 'VAPID keys are not configured on the server.',
+  };
 }
 
 export async function subscribeUserToPush(): Promise<{ success: boolean; message: string }> {
@@ -64,10 +83,18 @@ export async function subscribeUserToPush(): Promise<{ success: boolean; message
 
     // Get public key
     const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
+    if (!vapidKey) {
+      return { success: false, message: 'VAPID public key is not configured on the server.' };
+    }
 
     const convertedKey = urlBase64ToUint8Array(vapidKey);
 
     let subscription = await registration.pushManager.getSubscription();
+    const savedVapidKey = window.localStorage.getItem('safa-vapid-public-key');
+    if (subscription && savedVapidKey !== vapidKey) {
+      await subscription.unsubscribe();
+      subscription = null;
+    }
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -85,6 +112,7 @@ export async function subscribeUserToPush(): Promise<{ success: boolean; message
     if (!res.ok) {
       throw new Error('Failed to save subscription on server');
     }
+    window.localStorage.setItem('safa-vapid-public-key', vapidKey);
 
     return {
       success: true,

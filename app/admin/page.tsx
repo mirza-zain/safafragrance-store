@@ -5,19 +5,26 @@ import { Product, Order } from "@/app/lib/types";
 import QuickRecordSaleButton from "./(component)/QuickRecordSaleButton";
 import Link from "next/link";
 import { ArrowRight, BarChart3, Star } from "lucide-react";
-import { isPushSubscribed, subscribeUserToPush } from "@/app/lib/push-client";
+import { getPushStatus, subscribeUserToPush } from "@/app/lib/push-client";
 
 export default function AdminDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [notificationStatus, setNotificationStatus] = useState<"checking" | "inactive" | "active" | "enabling">("checking");
+  const [notificationStatus, setNotificationStatus] = useState<"checking" | "inactive" | "active" | "enabling" | "unavailable">("checking");
+  const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
 
   // Handle PWA install prompt
   useEffect(() => {
-    isPushSubscribed()
-      .then((subscribed) => setNotificationStatus(subscribed ? "active" : "inactive"))
-      .catch(() => setNotificationStatus("inactive"));
+    getPushStatus()
+      .then((status) => {
+        setNotificationStatus(status.configured && status.subscribed ? "active" : status.configured ? "inactive" : "unavailable");
+        setNotificationMessage(status.message || null);
+      })
+      .catch(() => {
+        setNotificationStatus("unavailable");
+        setNotificationMessage("Unable to verify notification settings.");
+      });
   }, []);
 
   useEffect(() => {
@@ -90,20 +97,22 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col sm:flex-row gap-3 mt-3">
               <button
                 type="button"
-                disabled={notificationStatus === "checking" || notificationStatus === "active" || notificationStatus === "enabling"}
+                disabled={notificationStatus !== "inactive"}
                 onClick={async () => {
                   setNotificationStatus("enabling");
                   const result = await subscribeUserToPush();
                   if (result.success) {
                     setNotificationStatus("active");
                   } else {
-                    setNotificationStatus("inactive");
+                    setNotificationStatus("unavailable");
                     alert(result.message);
                   }
                 }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                   notificationStatus === "active"
                     ? "cursor-default bg-emerald-100 text-emerald-800"
+                    : notificationStatus === "unavailable"
+                      ? "cursor-not-allowed bg-neutral-100 text-neutral-500"
                     : "bg-indigo-600 text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
                 }`}
               >
@@ -113,8 +122,13 @@ export default function AdminDashboardPage() {
                     ? "Enabling Notifications..."
                     : notificationStatus === "active"
                       ? "Notifications Working"
+                      : notificationStatus === "unavailable"
+                        ? "Notifications Unavailable"
                       : "Enable Notifications"}
               </button>
+              {notificationMessage && (
+                <p className="max-w-56 text-xs text-neutral-500 sm:self-center">{notificationMessage}</p>
+              )}
               <button
                 type="button"
                 onClick={() => {

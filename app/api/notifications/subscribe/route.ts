@@ -7,13 +7,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+  const endpoint = new URL(request.url).searchParams.get("endpoint");
 
   const total = (await getAllSubscriptions()).length;
+  const subscriptions = endpoint ? await getAllSubscriptions() : [];
 
   return NextResponse.json({
     publicKey,
+    configured: Boolean(publicKey && process.env.VAPID_PRIVATE_KEY),
+    subscribed: Boolean(endpoint && subscriptions.some((subscription) => subscription.endpoint === endpoint)),
     totalSubscribers: total,
-    status: "active",
+    status: publicKey && process.env.VAPID_PRIVATE_KEY ? "active" : "unconfigured",
   });
 }
 
