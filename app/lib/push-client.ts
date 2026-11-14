@@ -32,6 +32,18 @@ export async function getNotificationPermissionStatus(): Promise<NotificationPer
   return Notification.permission;
 }
 
+export async function isPushSubscribed(): Promise<boolean> {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return false;
+  }
+
+  const registration = await registerPushServiceWorker();
+  if (!registration) return false;
+
+  const subscription = await registration.pushManager.getSubscription();
+  return Boolean(subscription);
+}
+
 export async function subscribeUserToPush(): Promise<{ success: boolean; message: string }> {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
     return { success: false, message: 'Web push notifications are not supported in this browser.' };

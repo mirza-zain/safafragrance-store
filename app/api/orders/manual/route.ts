@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       lastName,
       email: email || "direct@safaperfumes.pk",
       phoneCountryCode: "+92",
-      phoneNum: phoneNum || "03001234567",
+      phoneNum: phoneNum || "03453124310",
       address: address || "Direct Sale",
       city: city || "Karachi",
       country: "Pakistan",

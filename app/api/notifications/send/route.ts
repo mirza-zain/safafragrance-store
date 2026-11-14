@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       tag: body.tag || "safa-announcement",
     };
 
-    const subscribers = getAllSubscriptions();
+    const subscribers = await getAllSubscriptions();
 
     if (subscribers.length === 0) {
       return NextResponse.json({

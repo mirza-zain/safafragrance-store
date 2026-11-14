@@ -5,14 +5,21 @@ import { Product, Order } from "@/app/lib/types";
 import QuickRecordSaleButton from "./(component)/QuickRecordSaleButton";
 import Link from "next/link";
 import { ArrowRight, BarChart3, Star } from "lucide-react";
-import { subscribeUserToPush } from "@/app/lib/push-client";
+import { isPushSubscribed, subscribeUserToPush } from "@/app/lib/push-client";
 
 export default function AdminDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [notificationStatus, setNotificationStatus] = useState<"checking" | "inactive" | "active" | "enabling">("checking");
 
   // Handle PWA install prompt
+  useEffect(() => {
+    isPushSubscribed()
+      .then((subscribed) => setNotificationStatus(subscribed ? "active" : "inactive"))
+      .catch(() => setNotificationStatus("inactive"));
+  }, []);
+
   useEffect(() => {
     const handler = (event: Event) => {
       event.preventDefault();
@@ -83,10 +90,30 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col sm:flex-row gap-3 mt-3">
               <button
                 type="button"
-                onClick={async () => { const result = await subscribeUserToPush(); alert(result.message); }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition"
+                disabled={notificationStatus === "checking" || notificationStatus === "active" || notificationStatus === "enabling"}
+                onClick={async () => {
+                  setNotificationStatus("enabling");
+                  const result = await subscribeUserToPush();
+                  if (result.success) {
+                    setNotificationStatus("active");
+                  } else {
+                    setNotificationStatus("inactive");
+                    alert(result.message);
+                  }
+                }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  notificationStatus === "active"
+                    ? "cursor-default bg-emerald-100 text-emerald-800"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
+                }`}
               >
-                Enable Notifications
+                {notificationStatus === "checking"
+                  ? "Checking Notifications..."
+                  : notificationStatus === "enabling"
+                    ? "Enabling Notifications..."
+                    : notificationStatus === "active"
+                      ? "Notifications Working"
+                      : "Enable Notifications"}
               </button>
               <button
                 type="button"

@@ -293,7 +293,7 @@ export default function PaymentPage() {
               Track Parcel Status →
             </Link>
             <a
-              href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "923001234567"}?text=Hello%20Safa%20Fragrance,%20my%20Order%20Tracking%20ID%20is%20${trackingId}`}
+              href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "923453124310"}?text=Hello%20Safa%20Fragrance,%20my%20Order%20Tracking%20ID%20is%20${trackingId}`}
               target="_blank"
               rel="noreferrer"
               className="flex-1 py-4 rounded-xl border border-[#d8cbb5] bg-white text-neutral-900 font-bold text-xs uppercase tracking-wider hover:border-[#1b4431] transition flex items-center justify-center gap-2"
@@ -452,7 +452,7 @@ export default function PaymentPage() {
                       }
                       aria-invalid={phoneIsInvalid}
                       aria-describedby={phoneIsInvalid ? "phone-error" : undefined}
-                      placeholder="3001234567"
+                      placeholder="3XXXXXXXXX"
                       className={`w-full px-4 py-3 rounded-r-xl border bg-[#faf7f2] text-sm focus:outline-hidden focus:border-[#1b4431] ${
                         phoneIsInvalid ? "border-red-400" : "border-[#e5dbc7]"
                       }`}

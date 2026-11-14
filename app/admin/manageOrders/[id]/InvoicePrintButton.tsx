@@ -41,7 +41,7 @@ export default function InvoicePrintButton({ order }: { order: Order }) {
               <Image src="/logo.png" alt="Safa Fragrance" fill priority sizes="240px" className="object-contain object-left" />
             </div>
             <p className="text-xs uppercase font-bold tracking-widest text-neutral-600">Haute Parfumerie • Pakistan</p>
-            <p className="text-xs text-neutral-500">DHA Phase 6, Karachi • +92 300 1234567</p>
+            <p className="text-xs text-neutral-500">DHA Phase 6, Karachi • +92 345 3124310</p>
           </div>
           <div className="text-right">
             <span className="text-xs uppercase font-bold tracking-widest text-neutral-500 block">Dispatch Slip</span>

@@ -5,7 +5,7 @@ import { MessageSquare, X } from "lucide-react";
 
 export default function FloatingWhatsApp() {
   const [open, setOpen] = useState(false);
-  const whatsappNum = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "923001234567";
+  const whatsappNum = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "923453124310";
 
   return (
     <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end">

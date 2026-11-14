@@ -32,10 +32,9 @@ export const BANK_TRANSFER_CONFIG: BankTransferConfig = {
       accountNumber: process.env.NEXT_PUBLIC_BANK_ACCOUNT_NUM || "01020102938475",
       iban: process.env.NEXT_PUBLIC_BANK_IBAN || "PK64MEZN0001020102938475",
       branchName: process.env.NEXT_PUBLIC_BANK_BRANCH || "Clifton Branch, Karachi",
-      raastId: process.env.NEXT_PUBLIC_BANK_RAAST_ID || "+92 300 1234567",
+      raastId: process.env.NEXT_PUBLIC_BANK_RAAST_ID || "+92 345 3124310",
       logo: "/images/Mashreq-Bank-Logo.png",
       notes: "Instant 0-fee transfer via Raast ID or IBAN"
     }
   ]
 };
-

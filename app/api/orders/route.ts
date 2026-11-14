@@ -2,6 +2,7 @@ import { getNeonProduct, updateNeonProduct } from "@/app/lib/neon-products";
 import { createNeonOrder, getNeonDiscountByCode, incrementNeonDiscountUsage, listNeonDeliveryCharges, listNeonOrders } from "@/app/lib/neon-commerce";
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/app/lib/admin-auth";
+import { broadcastNotification } from "@/app/lib/web-push";
 
 export async function POST(request: Request) {
   try {
@@ -166,6 +167,17 @@ export async function POST(request: Request) {
         stock: nextStock,
         variants: updatedVariants
       });
+    }
+
+    try {
+      await broadcastNotification({
+        title: "New order received",
+        body: `Order #${newOrder.id} from ${newOrder.firstName} ${newOrder.lastName} · Rs. ${newOrder.totalAmount.toLocaleString()}`,
+        url: `/admin/manageOrders/${newOrder.id}`,
+        tag: `order-${newOrder.id}`,
+      });
+    } catch (error) {
+      console.error("Order push notification failed:", error);
     }
 
     return NextResponse.json(newOrder, { status: 201 });

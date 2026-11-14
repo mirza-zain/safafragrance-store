@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { getAllSubscriptions, saveSubscription } from "@/app/lib/web-push";
+import { isAdminRequest } from "@/app/lib/admin-auth";
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!isAdminRequest(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
-  const total = getAllSubscriptions().length;
+  const total = (await getAllSubscriptions()).length;
 
   return NextResponse.json({
     publicKey,
@@ -15,6 +19,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    if (!isAdminRequest(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await request.json();
     const userAgent = request.headers.get("user-agent") || undefined;
 
@@ -25,7 +32,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = saveSubscription(body, userAgent);
+    const result = await saveSubscription(body, userAgent);
 
     return NextResponse.json({
       success: true,
