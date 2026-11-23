@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import React, { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next";
 import Navbar from "./(component)/Navbar";
 import "../globals.css";
 
@@ -39,6 +40,7 @@ gtag('js', new Date());`,
             {children}
           </div>
         </div>
+        <Analytics />
       </body>
     </html>
   );
