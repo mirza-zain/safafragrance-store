@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { InstagramIcon } from "./InstagramIcon";
 
 export default function Footer() {
   return (
@@ -65,6 +66,16 @@ export default function Footer() {
               className="text-sm text-[#d8c38c] hover:underline mt-1 font-medium tracking-wide transition"
             >
               +92 345 3124310
+            </a>
+            <a
+              href="https://www.instagram.com/safa_frangrance/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Safa Fragrance on Instagram"
+              className="mt-3 inline-flex items-center gap-2 text-sm text-neutral-300 hover:text-[#d8c38c] transition font-normal"
+            >
+              <InstagramIcon className="size-4" />
+              <span>@safa_frangrance</span>
             </a>
           </div>
         </div>

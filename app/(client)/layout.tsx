@@ -5,6 +5,7 @@ import Navbar from "./(components)/Navbar";
 import Footer from "./(components)/Footer";
 import CartDrawer from "./(components)/CartDrawer";
 import FloatingWhatsApp from "./(components)/FloatingWhatsApp";
+import PromoPopup from "./(components)/PromoPopup";
 import { CartProvider } from "../context/CartContext";
 
 export const metadata: Metadata = {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
     default: "Safa Fragrance | Concentrated Extrait de Parfum",
     template: "%s | Safa Fragrance",
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://safafragnance.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.safafragnance.com"),
   description: "Shop Safa Fragrance luxury extrait de parfum in Pakistan. Discover long-lasting oud, amber, rose, and woody fragrances crafted for your signature scent.",
   keywords: [
     "Safa Fragrance",
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_PK",
-    url: "https://safafragnance.com",
+    url: "https://www.safafragnance.com",
     siteName: "Safa Fragrance",
     title: "Safa Fragrance | Luxury Extrait de Parfum in Pakistan",
     description: "Discover long-lasting luxury extrait de parfum, composed with oud, amber, rose, woods, and warm resins.",
@@ -86,10 +87,10 @@ export default function RootLayout({
               "@graph": [
                 {
                   "@type": "Organization",
-                  "@id": "https://safafragnance.com/#organization",
+                  "@id": "https://www.safafragnance.com/#organization",
                   name: "Safa Fragrance",
-                  url: "https://safafragnance.com",
-                  logo: "https://safafragnance.com/logo.png",
+                  url: "https://www.safafragnance.com",
+                  logo: "https://www.safafragnance.com/logo.png",
                   description: "Luxury extrait de parfum and long-lasting fragrances crafted in Pakistan.",
                   address: {
                     "@type": "PostalAddress",
@@ -104,16 +105,17 @@ export default function RootLayout({
                     areaServed: "PK",
                     availableLanguage: ["English", "Urdu"],
                   },
+                  sameAs: ["https://www.instagram.com/safa_frangrance/"],
                 },
                 {
                   "@type": "WebSite",
-                  "@id": "https://safafragnance.com/#website",
-                  url: "https://safafragnance.com",
+                  "@id": "https://www.safafragnance.com/#website",
+                  url: "https://www.safafragnance.com",
                   name: "Safa Fragrance",
-                  publisher: { "@id": "https://safafragnance.com/#organization" },
+                  publisher: { "@id": "https://www.safafragnance.com/#organization" },
                   potentialAction: {
                     "@type": "SearchAction",
-                    target: "https://safafragnance.com/shop?search={search_term_string}",
+                    target: "https://www.safafragnance.com/shop?search={search_term_string}",
                     "query-input": "required name=search_term_string",
                   },
                 },
@@ -127,6 +129,7 @@ export default function RootLayout({
           </Suspense>
           <CartDrawer />
           <FloatingWhatsApp />
+          <PromoPopup />
           <main className="flex-1 flex flex-col">{children}</main>
           <Footer />
         </CartProvider>

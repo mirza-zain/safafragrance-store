@@ -9,6 +9,7 @@ import {
   Receipt,
   Package,
   Tag,
+  Megaphone,
   ArrowLeft,
   LogOut,
   Download
@@ -62,6 +63,7 @@ export default function Navbar() {
     { href: "/admin/manageOrders", label: "Manage Orders", icon: Receipt, exact: false },
     { href: "/admin/manageProducts", label: "Manage Products", icon: Package, exact: false },
     { href: "/admin/pricing", label: "Pricing Rules", icon: Tag, exact: false },
+    { href: "/admin/promo", label: "Promo Popup", icon: Megaphone, exact: false },
   ];
 
   return (

@@ -8,6 +8,7 @@ const isConfiguredDb =
   Boolean(dbUrl?.startsWith("postgres"));
 
 const trustedOrigins = [
+  "https://www.safafragnance.com",
   "https://safafragnance.com",
   "https://safafragrance.vercel.app",
   "https://safafragrance.vercel.com",
