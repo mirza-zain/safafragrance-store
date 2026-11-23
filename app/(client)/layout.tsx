@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Suspense } from "react";
 import "../globals.css";
 import Navbar from "./(components)/Navbar";
@@ -79,6 +80,20 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-screen flex flex-col bg-[#faf7f2] text-neutral-900 selection:bg-[#1b4431] selection:text-[#d8c38c]">
+        <Script
+          id="google-tag-manager"
+          src="https://www.googletagmanager.com/gtm.js?id=GTM-NG675THX"
+          strategy="beforeInteractive"
+        />
+        <Script
+          id="google-tag-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
