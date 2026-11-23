@@ -58,9 +58,9 @@ export default function Safa3DHero() {
       powerPreference: "high-performance",
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.25 : 1.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.25 : 1.75));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.12;
     mount.appendChild(renderer.domElement);
 
     // -----------------------------------------------------------------------
@@ -84,6 +84,18 @@ export default function Safa3DHero() {
     fillLight.position.set(-4, 3, 4);
     scene.add(fillLight);
 
+    // Base Bounce Light: gentle warm lift from the studio floor so the crystal
+    // base and lower label never fall into muddy shadow.
+    const baseBounceLight = new THREE.DirectionalLight(0xffe2b8, 0.32);
+    baseBounceLight.position.set(0, -4.0, 3.5);
+    scene.add(baseBounceLight);
+
+    // Crystal Edge Light: faint cool rim that makes the glass silhouette read
+    // cleanly against the warm champagne backdrop.
+    const crystalEdgeLight = new THREE.DirectionalLight(0xdce8ff, 0.20);
+    crystalEdgeLight.position.set(4.5, 2.0, -3.5);
+    scene.add(crystalEdgeLight);
+
     // Top Rim Light: Catches the 24K gold crown arches and crystal shoulder
     const topRimLight = new THREE.DirectionalLight(0xfff5e6, 0.85);
     topRimLight.position.set(0, 6, -3);
@@ -92,6 +104,44 @@ export default function Safa3DHero() {
     // Environment Map: a neutral studio room gives the gold and glass real reflections
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     const roomEnv = new RoomEnvironment();
+
+    // Augment the room with narrow, bright studio softbox strips. The default
+    // room lights are broad, which makes polished gold reflect soft blobs; these
+    // narrow strips give the nozzle/collar crisp vertical specular highlights.
+    const addEnvSoftbox = (
+      panelWidth: number,
+      panelHeight: number,
+      tint: THREE.ColorRepresentation,
+      intensity: number,
+      x: number,
+      y: number,
+      z: number
+    ) => {
+      const panelMat = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(tint),
+        side: THREE.DoubleSide,
+      });
+      // Values above 1.0 survive PMREM's HDR render target, so the strip reads
+      // as a real, bright light source in the reflections.
+      panelMat.color.multiplyScalar(intensity);
+
+      const panel = new THREE.Mesh(
+        new THREE.PlaneGeometry(panelWidth, panelHeight),
+        panelMat
+      );
+      panel.position.set(x, y, z);
+      panel.lookAt(0, 10, 0);
+      roomEnv.add(panel);
+    };
+
+    // Crisp vertical softboxes on both flanks
+    addEnvSoftbox(1.15, 16, 0xfff6e8, 6.0, -12.5, 10.5, 7.0);
+    addEnvSoftbox(0.95, 15, 0xfff1dc, 7.0, 12.0, 10.5, 6.5);
+    // Narrow top strip: sharp glints along the crown arches and collar rim
+    addEnvSoftbox(11, 0.7, 0xffffff, 5.0, 0, 19.5, 3.0);
+    // Slender frontal strip: a clean vertical highlight down the polished band
+    addEnvSoftbox(0.8, 9, 0xfffaf0, 4.5, 1.5, 12.5, 13.0);
+
     const envMap = pmremGenerator.fromScene(roomEnv, 0.04).texture;
     scene.environment = envMap;
     pmremGenerator.dispose();
@@ -120,6 +170,41 @@ export default function Safa3DHero() {
     // Shared 24K Royal Gold Material for accents
     // Soft blurred circular mist droplet texture for atomized fragrance spray
     const sprayDropletTex = textureLoader.load("/images/spray_droplet.png");
+
+    // Soft contact-shadow texture, generated on the fly. Two of these (a wide
+    // ambient pool + a tight core) are placed under the flacon so it sits on
+    // the studio floor instead of floating or casting a generic tube shadow.
+    const createContactShadowTexture = (innerAlpha: number) => {
+      const size = 256;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+
+      const gradient = ctx.createRadialGradient(
+        size / 2,
+        size / 2,
+        0,
+        size / 2,
+        size / 2,
+        size / 2
+      );
+      gradient.addColorStop(0, `rgba(22, 15, 8, ${innerAlpha})`);
+      gradient.addColorStop(0.34, `rgba(22, 15, 8, ${innerAlpha * 0.58})`);
+      gradient.addColorStop(0.66, `rgba(22, 15, 8, ${innerAlpha * 0.18})`);
+      gradient.addColorStop(1, "rgba(22, 15, 8, 0)");
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    };
+
+    // Cleanup hooks for anything created asynchronously after the model loads.
+    const lateDisposables: Array<() => void> = [];
 
     // -----------------------------------------------------------------------
     // LOAD THE AUTHENTIC EXPORTED BLENDER 3D MODEL
@@ -209,6 +294,13 @@ export default function Safa3DHero() {
                 clearcoatRoughness: 0.02,
                 ior: 1.54,
                 envMapIntensity: 2.6,
+                specularIntensity: 1.0,
+                // Faint prismatic sheen along the crystal edges — reads as real
+                // optical crystal without tinting the body.
+                iridescence: 0.12,
+                iridescenceIOR: 1.3,
+                iridescenceThicknessMinimum: 120,
+                iridescenceThicknessMaximum: 420,
                 transparent: true,
                 // Natural crystal transparency: allows the glowing cognac essence to be seen with true optical depth
                 opacity: isBaseSham ? 0.40 : 0.20,
@@ -294,13 +386,23 @@ export default function Safa3DHero() {
               child.name.includes("Nozzle") ||
               child.name.includes("Collar")
             ) {
+              // The atomizer nozzle, neck collar, and crown base band are
+              // machined metal parts — give them a tighter, sharper polish than
+              // the decorative crown so they read as real hardware.
+              const isMachinedGold =
+                meshName.includes("Nozzle") ||
+                meshName.includes("Neck_Collar") ||
+                meshName.includes("Crown_Base_Band") ||
+                parentName.includes("Nozzle") ||
+                parentName.includes("Neck_Collar");
+
               mesh.material = new THREE.MeshPhysicalMaterial({
                 color: new THREE.Color(0xd4af37), // Pure 24K Polished Gold
                 metalness: 1.0,
-                roughness: 0.10,
+                roughness: isMachinedGold ? 0.045 : 0.08,
                 clearcoat: 1.0,
-                clearcoatRoughness: 0.03,
-                envMapIntensity: 2.5,
+                clearcoatRoughness: 0.02,
+                envMapIntensity: isMachinedGold ? 3.2 : 2.8,
                 emissive: new THREE.Color(0x5a3d0a),
                 emissiveIntensity: 0.15,
               });
@@ -363,13 +465,17 @@ export default function Safa3DHero() {
             // 10. Front Brand Logo Decal: Striking Rich Emerald Green Calligraphy
             // High contrast against champagne liquid, matching the official brand color & logo header!
             else if (matName.includes("Decal") || meshName.includes("Label") || child.name.includes("Label")) {
-              mesh.material = new THREE.MeshStandardMaterial({
+              mesh.material = new THREE.MeshPhysicalMaterial({
                 map: decalTex,
                 color: new THREE.Color(0x0a3d2e), // Deep Haute Emerald Green
                 transparent: true,
                 alphaTest: 0.04,
                 roughness: 0.22,
-                metalness: 0.35,
+                metalness: 0.25,
+                // Laminated label sheen: catches a crisp highlight like real
+                // foiled label stock instead of a flat printed decal.
+                clearcoat: 0.55,
+                clearcoatRoughness: 0.18,
                 emissive: new THREE.Color(0x04241b), // Rich emerald depth
                 emissiveIntensity: 0.45,
                 side: THREE.DoubleSide,
@@ -394,6 +500,124 @@ export default function Safa3DHero() {
         gltf.scene.scale.set(s, s, s);
         gltf.scene.position.set(-center.x * s, -center.y * s + 0.15, -center.z * s);
         modelPivot.add(gltf.scene);
+
+        // -------------------------------------------------------------------
+        // GROUNDED CONTACT SHADOW
+        // Two soft, bottle-footprint-shaped ellipses sit on the studio floor so
+        // the flacon reads as planted. They live on masterStage (not modelPivot)
+        // so they follow the gentle float but never rotate with the bottle.
+        // -------------------------------------------------------------------
+        masterStage.updateWorldMatrix(true, true);
+        const worldBox = new THREE.Box3().setFromObject(gltf.scene);
+        const worldCenter = worldBox.getCenter(new THREE.Vector3());
+        const worldSize = worldBox.getSize(new THREE.Vector3());
+        const stageScale = masterStage.scale.x || 1;
+
+        const shadowCenterLocal = masterStage.worldToLocal(
+          new THREE.Vector3(worldCenter.x, worldBox.min.y, worldCenter.z)
+        );
+        const footprintWidth = worldSize.x / stageScale;
+        const footprintDepth = worldSize.z / stageScale;
+
+        const addContactShadow = (
+          shadowWidth: number,
+          shadowDepth: number,
+          innerAlpha: number,
+          yOffset: number
+        ) => {
+          const tex = createContactShadowTexture(innerAlpha);
+          if (!tex) return;
+
+          const geo = new THREE.PlaneGeometry(1, 1);
+          const mat = new THREE.MeshBasicMaterial({
+            map: tex,
+            transparent: true,
+            opacity: 1,
+            depthWrite: false,
+            toneMapped: false,
+          });
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.rotation.x = -Math.PI / 2;
+          mesh.scale.set(shadowWidth, shadowDepth, 1);
+          mesh.position.set(
+            shadowCenterLocal.x,
+            shadowCenterLocal.y + yOffset,
+            shadowCenterLocal.z
+          );
+          mesh.renderOrder = -1;
+          masterStage.add(mesh);
+
+          lateDisposables.push(() => {
+            masterStage.remove(mesh);
+            geo.dispose();
+            mat.dispose();
+            tex.dispose();
+          });
+        };
+
+        // Wide soft ambient occlusion pool
+        addContactShadow(
+          Math.max(footprintWidth * 1.7, 2.1),
+          Math.max(footprintDepth * 2.6, 2.1),
+          0.50,
+          -0.02
+        );
+        // Tighter, darker core that matches the actual base footprint
+        addContactShadow(
+          Math.max(footprintWidth * 1.05, 1.3),
+          Math.max(footprintDepth * 1.55, 1.3),
+          0.66,
+          -0.012
+        );
+
+        // -------------------------------------------------------------------
+        // MACHINED ATOMIZER DETAIL
+        // Crisp crimp seams and edge rings on the gold crown base band make the
+        // nozzle/collar read as real machined hardware instead of a soft, blurry
+        // cylinder. They are parented to the cap so they lift with it on uncap.
+        // -------------------------------------------------------------------
+        const capNode = capNodeRef.current;
+        if (capNode) {
+          const addCapRing = (
+            radius: number,
+            tube: number,
+            y: number,
+            color: number,
+            roughness: number,
+            emissive = 0x000000,
+            emissiveIntensity = 0
+          ) => {
+            const geo = new THREE.TorusGeometry(radius, tube, 10, 128);
+            const mat = new THREE.MeshPhysicalMaterial({
+              color: new THREE.Color(color),
+              metalness: 1.0,
+              roughness,
+              envMapIntensity: 3.2,
+              emissive: new THREE.Color(emissive),
+              emissiveIntensity,
+            });
+            const ring = new THREE.Mesh(geo, mat);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.y = y;
+            ring.castShadow = true;
+            capNode.add(ring);
+
+            lateDisposables.push(() => {
+              capNode.remove(ring);
+              geo.dispose();
+              mat.dispose();
+            });
+          };
+
+          // Bottom edge highlight where the band meets the glass neck
+          addCapRing(0.5435, 0.0065, 3.663, 0xffd88a, 0.035, 0x2a1a00, 0.2);
+          // Lower crimp seam groove
+          addCapRing(0.5425, 0.0055, 3.705, 0x5a3d12, 0.38);
+          // Upper crimp seam groove
+          addCapRing(0.5425, 0.0045, 3.955, 0x5a3d12, 0.38);
+          // Top edge highlight just under the scalloped rim
+          addCapRing(0.5435, 0.0055, 3.992, 0xffd88a, 0.035, 0x2a1a00, 0.2);
+        }
 
         // SETUP BLENDER ANIMATIONS:
         // Play ONLY the gentle ambient floating rose petals.
@@ -717,7 +941,7 @@ export default function Safa3DHero() {
       masterStage.scale.set(scale, scale, scale);
 
       renderer.setSize(w, h);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.25 : 1.5));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.25 : 1.75));
     };
 
     window.addEventListener("resize", handleResize);
@@ -902,6 +1126,10 @@ export default function Safa3DHero() {
 
       sakuraPetalGeo.dispose();
       sakuraMaterials.forEach((m) => m.dispose());
+      lateDisposables.forEach((dispose) => dispose());
+      decalTex.dispose();
+      sprayDropletTex.dispose();
+      envMap.dispose();
 
       if (mount && renderer.domElement) {
         mount.removeChild(renderer.domElement);
@@ -918,8 +1146,8 @@ export default function Safa3DHero() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[75vw] h-[75vw] max-w-[850px] max-h-[850px] rounded-full bg-radial from-[#dfc9bd]/45 via-[#eee3d7]/20 to-transparent blur-3xl" />
         {/* Regal Champagne Gold Radiance */}
         <div className="absolute top-1/3 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] rounded-full bg-radial from-[#dfc59b]/35 via-[#ebdcc2]/15 to-transparent blur-2xl" />
-        {/* Soft Polished Studio Floor Shadow / Pedestal */}
-        <div className="absolute bottom-[13%] left-1/2 -translate-x-1/2 w-[380px] sm:w-[500px] h-[50px] rounded-[100%] bg-radial from-[#2a221b]/22 via-[#473a2e]/06 to-transparent blur-lg" />
+        {/* Soft Polished Studio Floor Ambient Pool (3D contact shadow handles the real grounding) */}
+        <div className="absolute bottom-[7%] left-1/2 -translate-x-1/2 w-[300px] sm:w-[420px] h-[34px] rounded-[100%] bg-radial from-[#2a221b]/12 via-[#473a2e]/04 to-transparent blur-lg" />
         {/* Studio vignette blending smoothly into #faf7f2 */}
         <div className="absolute inset-0 bg-radial from-transparent via-[#f2e9dd]/8 to-[#d4c6b3]/35" />
       </div>
