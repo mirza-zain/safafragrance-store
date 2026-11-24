@@ -638,15 +638,30 @@ export default function PaymentPage() {
 
                   {BANK_TRANSFER_CONFIG.accounts.map((acc) => (
                     <div key={acc.accountNumber} className="space-y-3 bg-white p-4 rounded-xl border border-[#e5dbc7]">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-neutral-500">Bank:</span>
-                        <span className="font-bold text-neutral-900">{acc.bankName}</span>
+                      <div className="flex justify-between items-center gap-3 pb-3 border-b border-neutral-100">
+                        <div className="flex items-center gap-2.5">
+                          {acc.logo && (
+                            <Image
+                              src={acc.logo}
+                              alt={`${acc.bankName} logo`}
+                              width={75}
+                              height={22}
+                              className="h-6 w-auto object-contain"
+                            />
+                          )}
+                          <span className="text-xs font-medium text-neutral-500">
+                            {acc.bankName}
+                          </span>
+                        </div>
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          Verified Payout
+                        </span>
                       </div>
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-neutral-500">Account Title:</span>
+                        <span className="text-neutral-500">Payout Name:</span>
                         <span className="font-bold text-neutral-900">{acc.accountTitle}</span>
                       </div>
-                      <div className="flex justify-between items-center text-xs pt-1 border-t border-neutral-100">
+                      <div className="flex justify-between items-center text-xs">
                         <span className="text-neutral-500">Account Number:</span>
                         <div className="flex items-center gap-2">
                           <span className="font-mono font-bold text-neutral-900">{acc.accountNumber}</span>

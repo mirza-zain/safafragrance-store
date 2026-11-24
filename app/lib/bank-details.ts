@@ -27,14 +27,13 @@ export const BANK_TRANSFER_CONFIG: BankTransferConfig = {
   ],
   accounts: [
     {
-      bankName: process.env.NEXT_PUBLIC_BANK_NAME || "Meezan Bank Ltd",
-      accountTitle: process.env.NEXT_PUBLIC_BANK_ACCOUNT_TITLE || "Safa Fragrance",
-      accountNumber: process.env.NEXT_PUBLIC_BANK_ACCOUNT_NUM || "01020102938475",
-      iban: process.env.NEXT_PUBLIC_BANK_IBAN || "PK64MEZN0001020102938475",
-      branchName: process.env.NEXT_PUBLIC_BANK_BRANCH || "Clifton Branch, Karachi",
-      raastId: process.env.NEXT_PUBLIC_BANK_RAAST_ID || "+92 345 3124310",
-      logo: "/images/Mashreq-Bank-Logo.png",
-      notes: "Instant 0-fee transfer via Raast ID or IBAN"
+      bankName: "Habib Bank Limited",
+      accountTitle: "Sikander",
+      accountNumber: "23127900016103",
+      iban: "PK02HABB0023127900016103",
+      raastId: "PK02HABB0023127900016103",
+      logo: "/images/hbl-logo.png",
+      notes: "Instant 0-fee transfer via HBL app, internet banking, or Raast IBAN"
     }
   ]
 };
