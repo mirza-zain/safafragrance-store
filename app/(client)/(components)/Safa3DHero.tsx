@@ -58,20 +58,31 @@ export default function Safa3DHero() {
       powerPreference: "high-performance",
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.25 : 1.75));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2.0));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 1.1;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
 
     // -----------------------------------------------------------------------
     // STUDIO LIGHTING RIG (Balanced so Colors Stay Rich, Saturated & Deep)
     // -----------------------------------------------------------------------
-    const ambientLight = new THREE.AmbientLight(0xffeedb, 0.55);
+    const ambientLight = new THREE.AmbientLight(0xffeedb, 0.50);
     scene.add(ambientLight);
 
     // Key Light: Crisp directional studio light from upper-right front
-    const keyLight = new THREE.DirectionalLight(0xfffaed, 1.4);
+    const keyLight = new THREE.DirectionalLight(0xfffaed, 1.45);
     keyLight.position.set(3.5, 6.0, 5.0);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(1024, 1024);
+    keyLight.shadow.camera.near = 1;
+    keyLight.shadow.camera.far = 20;
+    keyLight.shadow.camera.left = -4;
+    keyLight.shadow.camera.right = 4;
+    keyLight.shadow.camera.top = 5;
+    keyLight.shadow.camera.bottom = -4;
+    keyLight.shadow.bias = -0.0005;
     scene.add(keyLight);
 
     // Warm Golden Accent Backlight: Soft rim lighting around the silhouette
@@ -135,14 +146,20 @@ export default function Safa3DHero() {
     };
 
     // Crisp vertical softboxes on both flanks
-    addEnvSoftbox(1.15, 16, 0xfff6e8, 6.0, -12.5, 10.5, 7.0);
-    addEnvSoftbox(0.95, 15, 0xfff1dc, 7.0, 12.0, 10.5, 6.5);
+    addEnvSoftbox(1.15, 16, 0xfff6e8, 6.5, -12.5, 10.5, 7.0);
+    addEnvSoftbox(0.95, 15, 0xfff1dc, 7.5, 12.0, 10.5, 6.5);
     // Narrow top strip: sharp glints along the crown arches and collar rim
-    addEnvSoftbox(11, 0.7, 0xffffff, 5.0, 0, 19.5, 3.0);
-    // Slender frontal strip: a clean vertical highlight down the polished band
-    addEnvSoftbox(0.8, 9, 0xfffaf0, 4.5, 1.5, 12.5, 13.0);
+    addEnvSoftbox(11, 0.7, 0xffffff, 5.5, 0, 19.5, 3.0);
+    // Slender frontal strip: a clean vertical highlight down the polished band & nozzle
+    addEnvSoftbox(0.75, 9, 0xfffaf0, 5.0, 1.5, 12.5, 13.0);
 
-    const envMap = pmremGenerator.fromScene(roomEnv, 0.04).texture;
+    // Negative-fill dark studio gobos: create rich dark-to-gold contrast on
+    // polished metal (nozzle, collar, crown) and crisp dark edges on crystal glass.
+    addEnvSoftbox(3.2, 18, 0x050403, 0.08, -7.5, 10.0, 9.5);
+    addEnvSoftbox(3.2, 18, 0x050403, 0.08, 7.5, 10.0, 9.5);
+    addEnvSoftbox(12.0, 2.2, 0x060504, 0.1, 0, 4.5, 11.5);
+
+    const envMap = pmremGenerator.fromScene(roomEnv, 0.012).texture;
     scene.environment = envMap;
     pmremGenerator.dispose();
     (roomEnv as unknown as { dispose?: () => void }).dispose?.();
@@ -282,29 +299,27 @@ export default function Safa3DHero() {
                 ior: 1.58,
               });
             }
-            // 2. Crystal glass: Heavy luxury optical crystal flacon body with solid crystal sham base
+            // 2. Crystal glass: Heavy luxury optical crystal flacon body with real physical refraction
             else if (meshName.includes("Safa_Bottle_Glass") || meshName.includes("Crystal_Base")) {
               const isBaseSham = meshName.includes("Crystal_Base");
-              // Luxury French crystal: clear optical glass with subtle golden-crystal warmth & sharp diamond reflections
+              // Luxury French crystal: real physical transmission + thick optical glass refraction
               const glassMat = new THREE.MeshPhysicalMaterial({
-                color: new THREE.Color(isBaseSham ? 0xf9f7f2 : 0xfcfbf8),
+                color: new THREE.Color(isBaseSham ? 0xfaf7f0 : 0xffffff),
                 metalness: 0.0,
-                roughness: 0.02,
+                roughness: 0.015,
+                transmission: 0.96,
+                thickness: isBaseSham ? 1.35 : 0.72,
+                attenuationColor: new THREE.Color(isBaseSham ? 0xf3ead8 : 0xfcf9f2),
+                attenuationDistance: isBaseSham ? 2.6 : 4.5,
                 clearcoat: 1.0,
-                clearcoatRoughness: 0.02,
+                clearcoatRoughness: 0.012,
                 ior: 1.54,
-                envMapIntensity: 2.6,
+                envMapIntensity: 2.8,
                 specularIntensity: 1.0,
-                // Faint prismatic sheen along the crystal edges — reads as real
-                // optical crystal without tinting the body.
-                iridescence: 0.12,
+                iridescence: 0.10,
                 iridescenceIOR: 1.3,
                 iridescenceThicknessMinimum: 120,
                 iridescenceThicknessMaximum: 420,
-                transparent: true,
-                // Natural crystal transparency: allows the glowing cognac essence to be seen with true optical depth
-                opacity: isBaseSham ? 0.40 : 0.20,
-                depthWrite: false,
               });
               glassMat.onBeforeCompile = (shader) => {
                 const marker = shader.fragmentShader.includes("#include <opaque_fragment>")
@@ -313,38 +328,34 @@ export default function Safa3DHero() {
                 shader.fragmentShader = shader.fragmentShader.replace(
                   marker,
                   marker + `
-                  // Heavy lead-crystal fresnel: sharp glass edge reflections & crystal facet gleam
+                  // Heavy lead-crystal fresnel: crisp glass edge reflections & crystal facet gleam
                   float nd = clamp(abs(dot(normalize(vNormal), normalize(vViewPosition))), 0.0, 1.0);
-                  float glassFres = pow(1.0 - nd, 3.2);
+                  float glassFres = pow(1.0 - nd, 3.6);
                   float glassSpec = clamp(dot(outgoingLight, vec3(0.3333)), 0.0, 1.0);
                   
-                  // Warm champagne crystal glint
-                  gl_FragColor.rgb += vec3(1.0, 0.95, 0.86) * (glassFres * 0.75 + glassSpec * 0.35);
-                  gl_FragColor.a = clamp(gl_FragColor.a + glassFres * 0.70, 0.0, 0.85);`
+                  // Subtle warm champagne crystal rim gleam
+                  gl_FragColor.rgb += vec3(1.0, 0.96, 0.88) * (glassFres * 0.42 + glassSpec * 0.18);`
                 );
               };
               mesh.material = glassMat;
               mesh.renderOrder = 3;
             }
             // 3. Perfume liquid: Luminous rich cognac-amber & golden champagne essence
+            // Rendered opaque so Three.js physical glass transmission refracts it cleanly!
             else if (
               matName.includes("Liquid") ||
               matName.includes("Champagne") ||
               meshName.includes("Liquid")
             ) {
-              // Liquid is an organic, translucent essence with high internal luminosity and light transmission
               const liquidMat = new THREE.MeshPhysicalMaterial({
                 color: new THREE.Color(0xd97706), // Radiant warm amber
-                emissive: new THREE.Color(0x92400e), // Deep rich cognac heart
-                emissiveIntensity: 0.60,
-                roughness: 0.05,
+                emissive: new THREE.Color(0x8a3b08), // Deep rich cognac heart
+                emissiveIntensity: 0.55,
+                roughness: 0.04,
                 metalness: 0.0,
                 clearcoat: 1.0,
                 clearcoatRoughness: 0.02,
-                envMapIntensity: 1.8,
-                transparent: true,
-                opacity: 0.88, // Translucent perfume extract - not a flat solid block!
-                depthWrite: false,
+                envMapIntensity: 1.9,
               });
               liquidMat.onBeforeCompile = (shader) => {
                 const marker = shader.fragmentShader.includes("#include <opaque_fragment>")
@@ -355,23 +366,35 @@ export default function Safa3DHero() {
                   marker + `
                   // Luxury liquid optical depth: rich dark cognac at the edges, glowing golden champagne in the center
                   float liqView = clamp(abs(dot(normalize(vNormal), normalize(vViewPosition))), 0.0, 1.0);
-                  vec3 deepCognac = vec3(0.55, 0.22, 0.04);
+                  vec3 deepCognac = vec3(0.48, 0.18, 0.03);
                   vec3 warmAmber = vec3(0.88, 0.52, 0.08);
-                  vec3 champagneGold = vec3(0.98, 0.82, 0.35);
+                  vec3 champagneGold = vec3(0.99, 0.84, 0.38);
                   
-                  // Internal radiance gradient based on optical path length
-                  vec3 coreLiquid = mix(deepCognac, warmAmber, pow(liqView, 0.8));
-                  coreLiquid = mix(coreLiquid, champagneGold, pow(liqView, 2.2) * 0.45);
+                  vec3 coreLiquid = mix(deepCognac, warmAmber, pow(liqView, 0.78));
+                  coreLiquid = mix(coreLiquid, champagneGold, pow(liqView, 2.2) * 0.48);
                   
-                  gl_FragColor.rgb = mix(coreLiquid, gl_FragColor.rgb, 0.35) + champagneGold * 0.15;
-                  gl_FragColor.a = mix(0.92, 0.78, liqView);`
+                  gl_FragColor.rgb = mix(coreLiquid, gl_FragColor.rgb, 0.35) + champagneGold * 0.12;`
                 );
               };
               mesh.material = liquidMat;
               mesh.renderOrder = 2;
             }
-            // 3b. Dip tube
+            // 3b. Dip tube: subtle translucent polymer stem inside the flacon
             else if (meshName.includes("Dip_Tube") || child.name.includes("Dip_Tube")) {
+              mesh.visible = true;
+              mesh.material = new THREE.MeshPhysicalMaterial({
+                color: new THREE.Color(0xf6efe2),
+                roughness: 0.16,
+                metalness: 0.0,
+                clearcoat: 1.0,
+                transparent: true,
+                opacity: 0.34,
+                depthWrite: false,
+              });
+              mesh.renderOrder = 1;
+            }
+            // 3c. Hide original forward-facing Spray Orifice (replaced by left-side machined insert)
+            else if (matName.includes("Orifice") || meshName.includes("Orifice") || child.name.includes("Orifice")) {
               mesh.visible = false;
             }
             // 4. Polished 24K Royal Gold (Hermite Crown, Atomizer Nozzle, Collar, Base Rim)
@@ -462,22 +485,19 @@ export default function Safa3DHero() {
                 side: THREE.DoubleSide,
               });
             }
-            // 10. Front Brand Logo Decal: Striking Rich Emerald Green Calligraphy
-            // High contrast against champagne liquid, matching the official brand color & logo header!
+            // 10. Front Brand Logo Decal: Crisp Foil-Stamped Emerald Green Calligraphy
             else if (matName.includes("Decal") || meshName.includes("Label") || child.name.includes("Label")) {
               mesh.material = new THREE.MeshPhysicalMaterial({
                 map: decalTex,
                 color: new THREE.Color(0x0a3d2e), // Deep Haute Emerald Green
                 transparent: true,
                 alphaTest: 0.04,
-                roughness: 0.22,
-                metalness: 0.25,
-                // Laminated label sheen: catches a crisp highlight like real
-                // foiled label stock instead of a flat printed decal.
-                clearcoat: 0.55,
-                clearcoatRoughness: 0.18,
-                emissive: new THREE.Color(0x04241b), // Rich emerald depth
-                emissiveIntensity: 0.45,
+                roughness: 0.18,
+                metalness: 0.35,
+                clearcoat: 0.75,
+                clearcoatRoughness: 0.12,
+                emissive: new THREE.Color(0x04241b),
+                emissiveIntensity: 0.18,
                 side: THREE.DoubleSide,
                 polygonOffset: true,
                 polygonOffsetFactor: -4,
@@ -619,6 +639,122 @@ export default function Safa3DHero() {
           addCapRing(0.5435, 0.0055, 3.992, 0xffd88a, 0.035, 0x2a1a00, 0.2);
         }
 
+        // -------------------------------------------------------------------
+        // REAL PRECISION ATOMIZER NOZZLE & CRIMP COLLAR ASSEMBLY
+        // Replaces the plain cylinder silhouette with machined actuator bevels,
+        // recessed finger-press top, stepped neck crimp collar, and a crisp
+        // multi-ring spray insert + pinhole orifice.
+        // -------------------------------------------------------------------
+        const nozzleNode = nozzleNodeRef.current;
+        if (nozzleNode) {
+          const addNozzlePart = (
+            geo: THREE.BufferGeometry,
+            mat: THREE.Material,
+            x: number,
+            y: number,
+            z: number,
+            rotX = 0,
+            rotZ = 0
+          ) => {
+            const part = new THREE.Mesh(geo, mat);
+            part.position.set(x, y, z);
+            if (rotX !== 0) part.rotation.x = rotX;
+            if (rotZ !== 0) part.rotation.z = rotZ;
+            part.castShadow = true;
+            part.receiveShadow = true;
+            nozzleNode.add(part);
+            lateDisposables.push(() => {
+              nozzleNode.remove(part);
+              geo.dispose();
+              mat.dispose();
+            });
+            return part;
+          };
+
+          const polishedGoldMat = () =>
+            new THREE.MeshPhysicalMaterial({
+              color: new THREE.Color(0xdcb854),
+              metalness: 1.0,
+              roughness: 0.04,
+              clearcoat: 1.0,
+              clearcoatRoughness: 0.015,
+              envMapIntensity: 3.4,
+            });
+
+          const brushedGoldMat = () =>
+            new THREE.MeshPhysicalMaterial({
+              color: new THREE.Color(0xc79e36),
+              metalness: 0.96,
+              roughness: 0.24,
+              envMapIntensity: 2.6,
+            });
+
+          const darkSeamMat = () =>
+            new THREE.MeshStandardMaterial({
+              color: new THREE.Color(0x4a320d),
+              metalness: 0.9,
+              roughness: 0.35,
+            });
+
+          // 1. Machined top rim bevel + recessed brushed-gold finger-press actuator cap
+          addNozzlePart(new THREE.TorusGeometry(0.285, 0.017, 16, 72), polishedGoldMat(), 0, 0.272, 0, Math.PI / 2);
+          addNozzlePart(new THREE.CylinderGeometry(0.255, 0.265, 0.014, 64), brushedGoldMat(), 0, 0.274, 0);
+          addNozzlePart(new THREE.TorusGeometry(0.18, 0.005, 10, 64), darkSeamMat(), 0, 0.281, 0, Math.PI / 2);
+
+          // 2. Crisp upper & lower machined waist grooves on the actuator cylinder
+          addNozzlePart(new THREE.TorusGeometry(0.301, 0.005, 12, 72), darkSeamMat(), 0, 0.23, 0, Math.PI / 2);
+          addNozzlePart(new THREE.TorusGeometry(0.302, 0.006, 12, 72), polishedGoldMat(), 0, -0.22, 0, Math.PI / 2);
+          addNozzlePart(new THREE.TorusGeometry(0.301, 0.005, 12, 72), darkSeamMat(), 0, -0.255, 0, Math.PI / 2);
+
+          // 3. Stepped base skirt where actuator meets the neck collar
+          addNozzlePart(new THREE.CylinderGeometry(0.325, 0.345, 0.06, 64), polishedGoldMat(), 0, -0.285, 0);
+
+          // 4. Precision multi-part spray insert on RIGHT (+X = +0.30, local y = +0.13, z = 0)
+          const insertHousingMat = new THREE.MeshStandardMaterial({
+            color: new THREE.Color(0x161310),
+            metalness: 0.85,
+            roughness: 0.22,
+          });
+          const insertBezelMat = new THREE.MeshPhysicalMaterial({
+            color: new THREE.Color(0xe6c86e),
+            metalness: 1.0,
+            roughness: 0.05,
+            envMapIntensity: 3.4,
+          });
+          const pinholeMat = new THREE.MeshBasicMaterial({ color: 0x040302 });
+
+          addNozzlePart(new THREE.CylinderGeometry(0.054, 0.054, 0.022, 32), insertBezelMat, 0.295, 0.13, 0, 0, Math.PI / 2);
+          addNozzlePart(new THREE.CylinderGeometry(0.042, 0.042, 0.026, 32), insertHousingMat, 0.298, 0.13, 0, 0, Math.PI / 2);
+          addNozzlePart(new THREE.CylinderGeometry(0.015, 0.015, 0.030, 24), pinholeMat, 0.301, 0.13, 0, 0, Math.PI / 2);
+        }
+
+        const neckCollarNode = gltf.scene.getObjectByName("Safa_Neck_Collar");
+        if (neckCollarNode) {
+          const addCollarRing = (radius: number, tube: number, y: number, color: number, roughness: number) => {
+            const geo = new THREE.TorusGeometry(radius, tube, 12, 96);
+            const mat = new THREE.MeshPhysicalMaterial({
+              color: new THREE.Color(color),
+              metalness: 1.0,
+              roughness,
+              envMapIntensity: 3.2,
+            });
+            const ring = new THREE.Mesh(geo, mat);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.y = y;
+            ring.castShadow = true;
+            neckCollarNode.add(ring);
+            lateDisposables.push(() => {
+              neckCollarNode.remove(ring);
+              geo.dispose();
+              mat.dispose();
+            });
+          };
+
+          addCollarRing(0.461, 0.008, 0.195, 0xffe094, 0.04);
+          addCollarRing(0.462, 0.005, 0.165, 0x4e350e, 0.35);
+          addCollarRing(0.462, 0.006, -0.185, 0xffe094, 0.04);
+        }
+
         // SETUP BLENDER ANIMATIONS:
         // Play ONLY the gentle ambient floating rose petals.
         // DO NOT play the cap lifting or mist plume clips on an automatic loop!
@@ -651,14 +787,14 @@ export default function Safa3DHero() {
 
     const resetParticle = (p: SprayParticle, origin: THREE.Vector3) => {
       p.pos.copy(origin);
-      // Fine atomized plume to the RIGHT flank:
+      // Fine atomized plume from the RIGHT-side nozzle (+X):
       // High initial velocity that bursts outwards, expanding into a soft mist cone
       const sideSpeed = 0.075 + Math.random() * 0.095;
       const spreadY = (Math.random() - 0.5) * 0.28;
       const spreadZ = (Math.random() - 0.5) * 0.24;
 
       p.vel.set(
-        sideSpeed,                           // spray direction: right
+        sideSpeed,                           // spray direction: right (+X)
         spreadY * sideSpeed + 0.006,         // fine vertical cone fan + gentle initial rise
         spreadZ * sideSpeed                  // 3D depth cone dispersion
       );
@@ -667,10 +803,10 @@ export default function Safa3DHero() {
       p.size = 0.35 + Math.random() * 0.30;
     };
 
-    const initialOrigin = new THREE.Vector3(0, 1.25, 0.05);
+    const initialOrigin = new THREE.Vector3(0.22, 1.28, 0);
     for (let i = 0; i < particleCount; i++) {
       const p: SprayParticle = {
-        pos: new THREE.Vector3(0, 1.25, 0.05),
+        pos: new THREE.Vector3(0.22, 1.28, 0),
         vel: new THREE.Vector3(),
         life: 0,
         maxLife: 45,
@@ -941,7 +1077,7 @@ export default function Safa3DHero() {
       masterStage.scale.set(scale, scale, scale);
 
       renderer.setSize(w, h);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.25 : 1.75));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.5 : 2.0));
     };
 
     window.addEventListener("resize", handleResize);
@@ -1016,15 +1152,13 @@ export default function Safa3DHero() {
         const uncapRatio = Math.min(1.0, (capCurrentY.current - 0.18) / 1.1);
         sprayMat.opacity = Math.min(0.92, uncapRatio * 0.95);
 
-        // Nozzle elevation tracking in modelPivot coordinates
-        const nozzleOrigin = new THREE.Vector3(0.08, 1.25, 0.05);
+        // Nozzle elevation tracking in modelPivot coordinates (exact right-side orifice)
+        const nozzleOrigin = new THREE.Vector3(0.22, 1.28, 0);
         if (nozzleNodeRef.current) {
-          nozzleNodeRef.current.getWorldPosition(tempVec);
+          tempVec.set(0.31, 0.13, 0);
+          nozzleNodeRef.current.localToWorld(tempVec);
           modelPivot.worldToLocal(tempVec);
           nozzleOrigin.copy(tempVec);
-          // Emitter point at the side orifice
-          nozzleOrigin.x += 0.08;
-          nozzleOrigin.y += 0.04;
         }
 
         const posAttr = sprayGeo.attributes.position as THREE.BufferAttribute;
